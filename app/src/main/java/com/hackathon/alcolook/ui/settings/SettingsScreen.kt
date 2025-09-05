@@ -26,6 +26,8 @@ import com.hackathon.alcolook.ui.theme.*
  */
 @Composable
 fun SettingsScreen() {
+    var showHelpDialog by remember { mutableStateOf(false) }
+    
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -60,9 +62,18 @@ fun SettingsScreen() {
         Spacer(modifier = Modifier.height(16.dp))
         
         // 앱 정보 섹션
-        AppInfoSection()
+        AppInfoSection(
+            onHelpClick = { showHelpDialog = true }
+        )
         
         Spacer(modifier = Modifier.height(100.dp))
+    }
+    
+    // 도움말 다이얼로그
+    if (showHelpDialog) {
+        HelpDialog(
+            onDismiss = { showHelpDialog = false }
+        )
     }
 }
 
@@ -206,7 +217,9 @@ private fun DataManagementSection() {
 }
 
 @Composable
-private fun AppInfoSection() {
+private fun AppInfoSection(
+    onHelpClick: () -> Unit
+) {
     Column {
         Text(
             text = "앱 정보",
@@ -241,11 +254,98 @@ private fun AppInfoSection() {
                     icon = "❓",
                     title = "도움말",
                     subtitle = "사용법 및 면책 사항",
-                    onClick = { /* TODO */ }
+                    onClick = onHelpClick
                 )
             }
         }
     }
+}
+
+@Composable
+private fun HelpDialog(
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(
+                text = "도움말 및 면책 사항",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+                color = Color.Black
+            )
+        },
+        text = {
+            Column(
+                modifier = Modifier.verticalScroll(rememberScrollState())
+            ) {
+                Text(
+                    text = "사용 안내",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = Color(0xFF2196F3)
+                )
+                
+                Spacer(modifier = Modifier.height(8.dp))
+                
+                Text(
+                    text = "본격 결과는 참고 지표입니다.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color.Black
+                )
+                
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                Text(
+                    text = "법적 고지 및 면책",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = Color(0xFF2196F3)
+                )
+                
+                Spacer(modifier = Modifier.height(8.dp))
+                
+                val disclaimerText = """
+                    • 이 앱은 의료기기/진단 도구가 아닙니다. 질병의 진단·치료·예방 목적에 사용할 수 없습니다.
+                    • 결과는 혈중알코올농도(BAC) 측정기를 대체하지 않습니다.
+                    • 운전 가능 여부 판단에 절대 사용하지 마세요.
+                    • 결과는 조명·각도·표정 등 환경에 따라 부정확할 수 있습니다. 오판 책임은 사용자에게 있습니다.
+                    • 이 앱은 온디바이스로 동작하며, 기본적으로 서버 전송을 하지 않습니다. 설정에서 데이터 전체 삭제가 가능합니다.
+                    • 응급 상황(알코올 중독 의심, 의식 저하 등)에서는 즉시 지역 응급번호로 연락하거나 의료기관을 이용하세요.
+                """.trimIndent()
+                
+                Text(
+                    text = disclaimerText,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color.Black,
+                    lineHeight = 18.sp
+                )
+                
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                Text(
+                    text = "데이터 관리: 설정 > 데이터 관리",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color.Gray
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = onDismiss,
+                colors = ButtonDefaults.textButtonColors(
+                    contentColor = Color(0xFF2196F3)
+                )
+            ) {
+                Text(
+                    text = "확인",
+                    fontWeight = FontWeight.Medium
+                )
+            }
+        },
+        containerColor = Color.White,
+        shape = RoundedCornerShape(16.dp)
+    )
 }
 
 @Composable
