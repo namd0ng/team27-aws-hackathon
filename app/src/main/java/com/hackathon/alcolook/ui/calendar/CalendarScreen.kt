@@ -3,7 +3,9 @@ package com.hackathon.alcolook.ui.calendar
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -261,6 +263,7 @@ private fun MonthlyCalendarContent(
         modifier = Modifier
             .fillMaxSize()
             .background(AppBackground)
+            .verticalScroll(rememberScrollState())
     ) {
         Card(
             modifier = Modifier
@@ -553,9 +556,7 @@ private fun MonthlyCalendarContent(
                 totalAlcohol = totalAlcohol,
                 totalStandardDrinks = totalStandardDrinks,
                 onDismiss = { showDetailDialog = false },
-                onEditRecord = { record ->
-                    // TODO: 편집 기능 구현
-                },
+                onEditRecord = null,
                 onDeleteRecord = { record ->
                     viewModel.deleteDrinkRecord(record.id)
                 }
@@ -574,17 +575,55 @@ private fun StatisticsContent(
     val healthStatus by viewModel.healthStatus.collectAsStateWithLifecycle()
     val weeklyChartData by viewModel.weeklyChartData.collectAsStateWithLifecycle()
     val monthlyChartData by viewModel.monthlyChartData.collectAsStateWithLifecycle()
-    val drinkTypeStats by viewModel.drinkTypeStats.collectAsStateWithLifecycle()
+    val weeklyDrinkTypeStats by viewModel.weeklyDrinkTypeStats.collectAsStateWithLifecycle()
+    val monthlyDrinkTypeStats by viewModel.monthlyDrinkTypeStats.collectAsStateWithLifecycle()
     val periods = listOf("주간 요약", "월간 요약")
     
     val currentStats = if (selectedPeriod == 0) weeklyStats else monthlyStats
     val currentChartData = if (selectedPeriod == 0) weeklyChartData else monthlyChartData
     val hasData = if (selectedPeriod == 0) weeklyStats.totalStandardDrinks > 0 else monthlyStats.totalStandardDrinks > 0
     
+    // 선택된 기간에 맞는 건강 상태 및 진행률 계산
+    val isMale = true // TODO: 사용자 성별 가져오기, 기본값 남성
+    val currentHealthStatus = if (selectedPeriod == 0) {
+        // 주간 기준
+        val weeklyAlcohol = weeklyStats.totalStandardDrinks * 8f // 표준잔2 -> 알코올(g)
+        when {
+            weeklyAlcohol <= if (isMale) 196f else 98f -> DrinkingStatus.APPROPRIATE // 28g * 7일
+            weeklyAlcohol <= if (isMale) 392f else 294f -> DrinkingStatus.CAUTION // 56g * 7일
+            weeklyAlcohol <= if (isMale) 490f else 392f -> DrinkingStatus.EXCESSIVE // 70g * 7일
+            else -> DrinkingStatus.DANGEROUS
+        }
+    } else {
+        // 월간 기준
+        val monthlyAlcohol = monthlyStats.totalStandardDrinks * 8f
+        val daysInMonth = java.time.LocalDate.now().lengthOfMonth()
+        when {
+            monthlyAlcohol <= if (isMale) (28f * daysInMonth) else (14f * daysInMonth) -> DrinkingStatus.APPROPRIATE
+            monthlyAlcohol <= if (isMale) (56f * daysInMonth) else (42f * daysInMonth) -> DrinkingStatus.CAUTION
+            monthlyAlcohol <= if (isMale) (70f * daysInMonth) else (56f * daysInMonth) -> DrinkingStatus.EXCESSIVE
+            else -> DrinkingStatus.DANGEROUS
+        }
+    }
+    
+    val progressValue = if (selectedPeriod == 0) {
+        // 주간 진행률
+        val weeklyAlcohol = weeklyStats.totalStandardDrinks * 8f
+        val weeklyLimit = if (isMale) 196f else 98f // 주간 적정 한계
+        (weeklyAlcohol / weeklyLimit).coerceAtMost(1f)
+    } else {
+        // 월간 진행률
+        val monthlyAlcohol = monthlyStats.totalStandardDrinks * 8f
+        val daysInMonth = java.time.LocalDate.now().lengthOfMonth()
+        val monthlyLimit = if (isMale) (28f * daysInMonth) else (14f * daysInMonth)
+        (monthlyAlcohol / monthlyLimit).coerceAtMost(1f)
+    }
+    
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(AppBackground)
+            .verticalScroll(rememberScrollState())
             .padding(16.dp)
     ) {
         Row(
@@ -655,7 +694,7 @@ private fun StatisticsContent(
                     )
                     Spacer(modifier = Modifier.height(12.dp))
                     Text(
-                        text = viewModel.getCharacterComment(healthStatus),
+                        text = viewModel.getCharacterComment(currentHealthStatus),
                         style = MaterialTheme.typography.bodyLarge,
                         textAlign = TextAlign.Center,
                         fontWeight = FontWeight.Medium,
@@ -704,7 +743,7 @@ private fun StatisticsContent(
                         color = TextSecondary
                     )
                     Text(
-                        text = when(healthStatus) {
+                        text = when(currentHealthStatus) {
                             DrinkingStatus.APPROPRIATE -> "적정"
                             DrinkingStatus.CAUTION -> "주의"
                             DrinkingStatus.EXCESSIVE -> "과음"
@@ -712,7 +751,7 @@ private fun StatisticsContent(
                         },
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.SemiBold,
-                        color = when(healthStatus) {
+                        color = when(currentHealthStatus) {
                             DrinkingStatus.APPROPRIATE -> androidx.compose.ui.graphics.Color.Green
                             DrinkingStatus.CAUTION -> androidx.compose.ui.graphics.Color(0xFFFF9800)
                             DrinkingStatus.EXCESSIVE -> androidx.compose.ui.graphics.Color.Red
@@ -724,13 +763,9 @@ private fun StatisticsContent(
                 Spacer(modifier = Modifier.height(8.dp))
                 
                 LinearProgressIndicator(
-                    progress = if (selectedPeriod == 0) {
-                        (weeklyStats.totalStandardDrinks / 14f).coerceAtMost(1f)
-                    } else {
-                        (monthlyStats.totalStandardDrinks / 60f).coerceAtMost(1f)
-                    },
+                    progress = progressValue,
                     modifier = Modifier.fillMaxWidth(),
-                    color = when(healthStatus) {
+                    color = when(currentHealthStatus) {
                         DrinkingStatus.APPROPRIATE -> androidx.compose.ui.graphics.Color.Green
                         DrinkingStatus.CAUTION -> androidx.compose.ui.graphics.Color(0xFFFF9800)
                         DrinkingStatus.EXCESSIVE -> androidx.compose.ui.graphics.Color.Red
@@ -796,7 +831,7 @@ private fun StatisticsContent(
         
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Card(
                 modifier = Modifier.weight(1f),
@@ -888,7 +923,8 @@ private fun StatisticsContent(
         Spacer(modifier = Modifier.height(16.dp))
         
         // 술 종류별 통계
-        if (hasData && drinkTypeStats.isNotEmpty()) {
+        val currentDrinkTypeStats = if (selectedPeriod == 0) weeklyDrinkTypeStats else monthlyDrinkTypeStats
+        if (hasData && currentDrinkTypeStats.isNotEmpty()) {
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(containerColor = CardBackground),
@@ -916,7 +952,7 @@ private fun StatisticsContent(
                     
                     Spacer(modifier = Modifier.height(16.dp))
                     
-                    drinkTypeStats.take(5).forEach { (type, amount) ->
+                    currentDrinkTypeStats.take(5).forEach { (type, amount) ->
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween,

@@ -314,10 +314,10 @@ fun AddRecordDialog(
                     shape = RoundedCornerShape(16.dp),
                     colors = CardDefaults.cardColors(
                         containerColor = when(resultStatus) {
-                            DrinkingStatus.APPROPRIATE -> androidx.compose.ui.graphics.Color.Green.copy(alpha = 0.1f)
-                            DrinkingStatus.CAUTION -> androidx.compose.ui.graphics.Color.Yellow.copy(alpha = 0.1f)
-                            DrinkingStatus.EXCESSIVE -> androidx.compose.ui.graphics.Color.Red.copy(alpha = 0.1f)
-                            DrinkingStatus.DANGEROUS -> androidx.compose.ui.graphics.Color.Black.copy(alpha = 0.1f)
+                            DrinkingStatus.APPROPRIATE -> androidx.compose.ui.graphics.Color.Green.copy(alpha = 0.7f)
+                            DrinkingStatus.CAUTION -> androidx.compose.ui.graphics.Color.Yellow.copy(alpha = 0.7f)
+                            DrinkingStatus.EXCESSIVE -> androidx.compose.ui.graphics.Color.Red.copy(alpha = 0.7f)
+                            DrinkingStatus.DANGEROUS -> androidx.compose.ui.graphics.Color.Black.copy(alpha = 0.7f)
                         }
                     )
                 ) {

@@ -100,8 +100,8 @@ class SimpleCalendarViewModel : ViewModel() {
         generateMonthlyChartData(recordList)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(), emptyList())
     
-    // 술 종류별 통계
-    val drinkTypeStats = records.map { recordList ->
+    // 주간 술 종류별 통계
+    val weeklyDrinkTypeStats = records.map { recordList ->
         val today = LocalDate.now()
         val startOfWeek = today.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
         val endOfWeek = today.with(TemporalAdjusters.nextOrSame(DayOfWeek.SUNDAY))
@@ -111,6 +111,24 @@ class SimpleCalendarViewModel : ViewModel() {
         }
         
         weeklyRecords.groupBy { it.type }
+            .mapValues { (_, records) -> 
+                records.sumOf { it.getPureAlcoholGrams().toDouble() }.toFloat()
+            }
+            .toList()
+            .sortedByDescending { it.second }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(), emptyList())
+    
+    // 월간 술 종류별 통계
+    val monthlyDrinkTypeStats = records.map { recordList ->
+        val today = LocalDate.now()
+        val startOfMonth = today.withDayOfMonth(1)
+        val endOfMonth = today.withDayOfMonth(today.lengthOfMonth())
+        
+        val monthlyRecords = recordList.filter { record ->
+            !record.date.isBefore(startOfMonth) && !record.date.isAfter(endOfMonth)
+        }
+        
+        monthlyRecords.groupBy { it.type }
             .mapValues { (_, records) -> 
                 records.sumOf { it.getPureAlcoholGrams().toDouble() }.toFloat()
             }
@@ -284,20 +302,22 @@ class SimpleCalendarViewModel : ViewModel() {
         val chartData = mutableListOf<ChartData>()
         val isMale = userProfile.sex == Gender.MALE
         
-        // 최근 7일 (월~일)
-        for (i in 6 downTo 0) {
-            val date = today.minusDays(i.toLong())
+        // 이번 주 월요일부터 일요일까지 (현재 날짜 기준)
+        val startOfWeek = today.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
+        
+        for (i in 0..6) {
+            val date = startOfWeek.plusDays(i.toLong())
             val dayRecords = records.filter { it.date == date }
             val totalAlcohol = dayRecords.sumOf { it.getPureAlcoholGrams().toDouble() }.toFloat()
             
-            val dayOfWeek = when (date.dayOfWeek.value) {
-                1 -> "월"
-                2 -> "화"
-                3 -> "수"
-                4 -> "목"
-                5 -> "금"
-                6 -> "토"
-                7 -> "일"
+            val dayOfWeek = when (i) {
+                0 -> "월"
+                1 -> "화"
+                2 -> "수"
+                3 -> "목"
+                4 -> "금"
+                5 -> "토"
+                6 -> "일"
                 else -> ""
             }
             
@@ -312,7 +332,7 @@ class SimpleCalendarViewModel : ViewModel() {
             chartData.add(
                 ChartData(
                     label = dayOfWeek,
-                    value = totalAlcohol, // 순수 알코올량(g)으로 변경
+                    value = totalAlcohol,
                     color = color,
                     status = status
                 )
@@ -327,19 +347,41 @@ class SimpleCalendarViewModel : ViewModel() {
         val chartData = mutableListOf<ChartData>()
         val isMale = userProfile.sex == Gender.MALE
         
-        // 최근 4주
-        for (week in 3 downTo 0) {
-            val weekStart = today.minusWeeks(week.toLong()).with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
+        // 이번 달의 주차별 데이터 (월~일 기준)
+        val startOfMonth = today.withDayOfMonth(1)
+        val endOfMonth = today.withDayOfMonth(today.lengthOfMonth())
+        
+        // 이번 달의 모든 월요일 찾기
+        val mondays = mutableListOf<LocalDate>()
+        var currentMonday = startOfMonth.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
+        
+        while (currentMonday.isBefore(endOfMonth.plusDays(1))) {
+            if (!currentMonday.isBefore(startOfMonth) || currentMonday.plusDays(6).isAfter(startOfMonth.minusDays(1))) {
+                mondays.add(currentMonday)
+            }
+            currentMonday = currentMonday.plusWeeks(1)
+        }
+        
+        mondays.forEachIndexed { index, weekStart ->
             val weekEnd = weekStart.plusDays(6)
             
+            // 이번 달에 포함되는 날짜들만 필터링
             val weekRecords = records.filter { record ->
-                !record.date.isBefore(weekStart) && !record.date.isAfter(weekEnd)
+                !record.date.isBefore(weekStart) && 
+                !record.date.isAfter(weekEnd) &&
+                !record.date.isBefore(startOfMonth) &&
+                !record.date.isAfter(endOfMonth)
             }
             
             val totalAlcohol = weekRecords.sumOf { it.getPureAlcoholGrams().toDouble() }.toFloat()
-            val weeklyAverage = totalAlcohol / 7f // 주간 평균
             
-            val status = evaluateDailyStatus(weeklyAverage, isMale)
+            val status = when {
+                totalAlcohol <= if (isMale) 196f else 98f -> DrinkingStatus.APPROPRIATE // 28g * 7일
+                totalAlcohol <= if (isMale) 392f else 294f -> DrinkingStatus.CAUTION
+                totalAlcohol <= if (isMale) 490f else 392f -> DrinkingStatus.EXCESSIVE
+                else -> DrinkingStatus.DANGEROUS
+            }
+            
             val color = when (status) {
                 DrinkingStatus.APPROPRIATE -> androidx.compose.ui.graphics.Color.Green
                 DrinkingStatus.CAUTION -> androidx.compose.ui.graphics.Color(0xFFFF9800)
@@ -349,7 +391,7 @@ class SimpleCalendarViewModel : ViewModel() {
             
             chartData.add(
                 ChartData(
-                    label = if (week == 0) "이번주" else "${week}주전",
+                    label = "${index + 1}주차",
                     value = totalAlcohol,
                     color = color,
                     status = status
@@ -360,20 +402,7 @@ class SimpleCalendarViewModel : ViewModel() {
         return chartData
     }
     
-    private fun evaluateDailyStatus(dailyStandardDrinks: Float): DrinkingStatus {
-        val dailyLimit = when {
-            userProfile.isSenior65 -> 1f // 65세 이상: 1잔
-            userProfile.sex == Gender.MALE -> 2f // 남성: 2잔
-            userProfile.sex == Gender.FEMALE -> 1f // 여성: 1잔
-            else -> 2f // 기본값
-        }
-        
-        return when {
-            dailyStandardDrinks <= dailyLimit -> DrinkingStatus.APPROPRIATE
-            dailyStandardDrinks <= dailyLimit * 2 -> DrinkingStatus.CAUTION
-            else -> DrinkingStatus.EXCESSIVE
-        }
-    }
+
 }
 
 // 통계 데이터 클래스들
