@@ -19,7 +19,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
-import com.google.accompanist.permissions.isGranted
+import com.google.accompanist.permissions.PermissionStatus
 import com.google.accompanist.permissions.rememberPermissionState
 import com.hackathon.alcolook.ui.theme.AlcoLookTheme
 import kotlinx.coroutines.launch
@@ -45,7 +45,7 @@ fun DrunkDetectionScreen() {
     val drunkDetectionService = remember { DrunkDetectionService() }
     val coroutineScope = rememberCoroutineScope()
     
-    if (cameraPermissionState.isGranted) {
+    if (cameraPermissionState.status == PermissionStatus.Granted) {
         Box(
             modifier = Modifier
                 .fillMaxSize()

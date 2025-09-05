@@ -1,26 +1,42 @@
 package com.hackathon.alcolook
 
+import android.content.Context
 import com.amazonaws.auth.BasicAWSCredentials
 import com.amazonaws.regions.Region
 import com.amazonaws.regions.Regions
 import com.amazonaws.services.rekognition.AmazonRekognitionClient
+import java.util.Properties
 
 object AwsConfig {
-    // 테스트 모드 - 실제 AWS 연결 없이 테스트 가능
-    const val TEST_MODE = true
+    const val TEST_MODE = false
     
-    // TODO: 실제 배포 시 아래 자격 증명을 실제 값으로 교체하고 TEST_MODE를 false로 변경
-    private const val ACCESS_KEY = "YOUR_ACCESS_KEY"
-    private const val SECRET_KEY = "YOUR_SECRET_KEY"
+    private fun loadCredentials(context: Context): Pair<String, String>? {
+        return try {
+            val properties = Properties()
+            context.assets.open("aws-credentials.properties").use { inputStream ->
+                properties.load(inputStream)
+            }
+            val accessKey = properties.getProperty("aws.access.key")
+            val secretKey = properties.getProperty("aws.secret.key")
+            if (accessKey != null && secretKey != null) {
+                Pair(accessKey, secretKey)
+            } else null
+        } catch (e: Exception) {
+            null
+        }
+    }
     
-    fun getRekognitionClient(): AmazonRekognitionClient? {
+    fun getRekognitionClient(context: Context): AmazonRekognitionClient? {
         return if (TEST_MODE) {
-            null // 테스트 모드에서는 null 반환
+            null
         } else {
-            val credentials = BasicAWSCredentials(ACCESS_KEY, SECRET_KEY)
-            val client = AmazonRekognitionClient(credentials)
-            client.setRegion(Region.getRegion(Regions.US_EAST_1))
-            client
+            val credentials = loadCredentials(context)
+            if (credentials != null) {
+                val awsCredentials = BasicAWSCredentials(credentials.first, credentials.second)
+                val client = AmazonRekognitionClient(awsCredentials)
+                client.setRegion(Region.getRegion(Regions.US_EAST_1))
+                client
+            } else null
         }
     }
 }
