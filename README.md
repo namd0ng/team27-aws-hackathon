@@ -1,52 +1,120 @@
 # AlcoLook - 음주 측정 및 관리 앱
 
-## 프로젝트 구조
+AWS 해커톤 Team27 프로젝트
 
-### 기술 스택
-- **Kotlin** + **Jetpack Compose** (Material 3)
-- **Navigation Compose** for 3-tab navigation
-- **Local-only** data storage (no network)
-- **minSdk 26**, **compileSdk 36**, **targetSdk 36**
+## 📱 프로젝트 개요
 
-### 아키텍처
-```
-com.hackathon.alcolook/
-├── ui/
-│   ├── theme/           # Material 3 테마 (Color, Theme, Type)
-│   ├── navigation/      # 네비게이션 구성
-│   ├── home/           # 홈 화면 (얼굴 분석/촬영)
-│   ├── calendar/       # 캘린더 화면 (월별/통계 하위 탭)
-│   ├── settings/       # 설정 화면
-│   └── components/     # 공용 컴포넌트
-└── MainActivity.kt
-```
+AlcoLook은 얼굴 분석을 통한 음주 측정 및 관리 앱입니다.
 
 ### 주요 기능
-1. **홈 (촬영)**: 얼굴 분석 및 촬영 인터페이스
-2. **캘린더**: 
-   - 월별 탭: 월 그리드 + 날짜별 상태 표시
-   - 통계 탭: 주간/월간 요약, 건강 지수, 트렌드
-3. **설정**: 프로필, 데이터 관리, 도움말
+- 📸 **얼굴 분석**: 카메라를 통한 음주 상태 측정
+- 📊 **음주 기록**: 일별/주별/월별 음주 패턴 분석
+- 📅 **캘린더**: 음주 기록 시각화 및 관리
+- 👤 **프로필**: 개인 설정 및 목표 관리
 
-### 색상 토큰 (PRD 준수)
-- `warning-soft = #FFF4E5` (주의 상태)
-- `danger-soft = #FDEBEC` (폭음 상태)
+## 🏗️ 기술 스택
 
-### 특징
-- **XML 테마 없음**: Compose Material 3만 사용
-- **ActionBar 비활성화**: `WindowCompat.setDecorFitsSystemWindows(window, false)`
-- **이모지 아이콘**: Material Icons 대신 플랫폼 이모지 사용
-- **한국어 UI**: strings.xml에 모든 텍스트 정의
-- **면책 고지**: 결과 화면과 설정에 상시 표기
+### Frontend (Android)
+- **Kotlin** + **Jetpack Compose** (Material 3)
+- **Navigation Compose** (3-tab navigation)
+- **CameraX** (카메라 기능)
+- **ML Kit** (얼굴 검출)
+- **OkHttp** (네트워크 통신)
 
-### 빌드 및 실행
+### Backend (AWS)
+- **AWS Lambda** (Python + Node.js)
+- **Amazon DynamoDB** (데이터 저장)
+- **API Gateway** (REST API)
+- **JWT** 인증
+
+## 📁 프로젝트 구조
+
+```
+team27-aws-hackathon/
+├── app/                    # Android 앱
+│   ├── src/main/java/com/hackathon/alcolook/
+│   │   ├── ui/            # UI 컴포넌트
+│   │   │   ├── home/      # 홈 화면 (촬영)
+│   │   │   ├── calendar/  # 캘린더 화면
+│   │   │   ├── settings/  # 설정 화면
+│   │   │   └── auth/      # 로그인/회원가입
+│   │   ├── data/          # 데이터 레이어
+│   │   └── theme/         # Material 3 테마
+│   └── build.gradle.kts
+├── aws-backend/           # AWS Lambda 함수 (Python)
+│   ├── lambda/
+│   │   ├── user_login.py     # 로그인 API
+│   │   ├── user_register.py  # 회원가입 API
+│   │   └── update_profile.py # 프로필 업데이트
+│   └── cloudformation/       # AWS 인프라
+├── backend/               # 프로필 전용 API (Node.js)
+│   ├── lambda/
+│   │   └── profile-api.js    # 프로필 CRUD
+│   └── cloudformation/
+└── docs/                  # 문서
+    └── PRD.md            # 제품 요구사항 문서
+```
+
+## 🚀 시작하기
+
+### 1. Android 앱 빌드
 ```bash
 ./gradlew assembleDebug
 ```
 
-### 다음 단계 (구현 예정)
-- CameraX 통합
-- ML Kit 얼굴 검출
-- Room 데이터베이스
-- Hilt DI
-- 실제 데이터 모델 및 비즈니스 로직
+### 2. AWS 백엔드 배포
+```bash
+cd aws-backend
+./deploy.sh
+```
+
+### 3. 프로필 API 배포
+```bash
+cd backend
+./deploy.sh
+```
+
+## 🎨 디자인 시스템
+
+### 색상 토큰
+- `warning-soft = #FFF4E5` (주의 상태)
+- `danger-soft = #FDEBEC` (폭음 상태)
+
+### 네비게이션
+- **홈**: 얼굴 분석 및 촬영
+- **캘린더**: 월별 기록 + 통계 (하위 탭)
+- **설정**: 프로필, 데이터 관리, 도움말
+
+## 📊 데이터베이스
+
+### DynamoDB 테이블
+1. **alcolook-users**: 사용자 정보
+2. **alcolook-user-profiles**: 사용자 프로필
+
+### 데이터 모델
+```json
+{
+  "userId": "string",
+  "sex": "MALE|FEMALE|UNSET",
+  "age": "number",
+  "isSenior65": "boolean",
+  "weeklyGoalStdDrinks": "number"
+}
+```
+
+## 🔐 인증
+
+- JWT 토큰 기반 인증
+- 7일 만료 정책
+- 로그인/회원가입/비밀번호 찾기 지원
+
+## ⚠️ 면책 고지
+
+이 앱은 의료 목적이 아니며, 운전 판단에 사용하지 마세요.
+모든 데이터는 개인 정보 보호를 위해 안전하게 관리됩니다.
+
+## 👥 Team27
+
+AWS 해커톤 참가팀
+- 음주 측정 및 관리 솔루션 개발
+- DynamoDB 기반 클라우드 아키텍처
