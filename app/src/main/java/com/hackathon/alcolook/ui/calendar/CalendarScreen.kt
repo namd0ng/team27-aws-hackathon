@@ -146,7 +146,7 @@ fun CalendarScreen(
                 .fillMaxWidth()
                 .background(CardBackground)
                 .padding(horizontal = 16.dp, vertical = 10.dp),
-            horizontalArrangement = Arrangement.Center
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             tabs.forEachIndexed { index, title ->
                 FilterChip(
@@ -155,14 +155,19 @@ fun CalendarScreen(
                         viewModel.selectTab(index) 
                     },
                     label = { 
-                        Text(
-                            text = title,
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Medium
-                        )
+                        Box(
+                            modifier = Modifier.fillMaxWidth(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = title,
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
                     },
                     selected = selectedTab == index,
-                    modifier = Modifier.padding(horizontal = 8.dp),
+                    modifier = Modifier.weight(1f),
                     colors = FilterChipDefaults.filterChipColors(
                         selectedContainerColor = TabSelected.copy(alpha = 0.12f),
                         selectedLabelColor = TabSelected,
