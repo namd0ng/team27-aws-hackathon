@@ -231,13 +231,13 @@ private fun MonthlyCalendarContent(
     onAddRecord: () -> Unit
 ) {
     val selectedDate by viewModel.selectedDate.collectAsStateWithLifecycle()
+    val currentMonth by viewModel.currentMonth.collectAsStateWithLifecycle()
     val records by viewModel.records.collectAsStateWithLifecycle()
     val dailyStatusMap by viewModel.dailyStatusMap.collectAsStateWithLifecycle()
     val selectedDateRecords = records.filter { it.date == selectedDate }
     var showDetailDialog by remember { mutableStateOf(false) }
     var showDatePicker by remember { mutableStateOf(false) }
     val today = LocalDate.now()
-    val currentMonth = java.time.YearMonth.now()
     
     Column(
         modifier = Modifier
@@ -264,7 +264,7 @@ private fun MonthlyCalendarContent(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     IconButton(
-                        onClick = { /* TODO */ }
+                        onClick = { viewModel.goToPreviousMonth() }
                     ) {
                         Text(
                             text = "<",
@@ -286,7 +286,7 @@ private fun MonthlyCalendarContent(
                     }
                     
                     IconButton(
-                        onClick = { /* TODO */ }
+                        onClick = { viewModel.goToNextMonth() }
                     ) {
                         Text(
                             text = ">",

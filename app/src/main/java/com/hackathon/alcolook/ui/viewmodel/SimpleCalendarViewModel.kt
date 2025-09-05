@@ -17,6 +17,9 @@ class SimpleCalendarViewModel : ViewModel() {
     private val _selectedDate = MutableStateFlow(LocalDate.now())
     val selectedDate = _selectedDate.asStateFlow()
 
+    private val _currentMonth = MutableStateFlow(YearMonth.now())
+    val currentMonth = _currentMonth.asStateFlow()
+
     private val _selectedTab = MutableStateFlow(0)
     val selectedTab = _selectedTab.asStateFlow()
 
@@ -147,7 +150,13 @@ class SimpleCalendarViewModel : ViewModel() {
     fun selectPeriod(periodIndex: Int) {
         _selectedPeriod.value = periodIndex
     }
+    fun goToPreviousMonth() {
+        _currentMonth.value = _currentMonth.value.minusMonths(1)
+    }
 
+    fun goToNextMonth() {
+        _currentMonth.value = _currentMonth.value.plusMonths(1)
+    }
     fun addDrinkRecord(
         type: DrinkType,
         unit: DrinkUnit,
