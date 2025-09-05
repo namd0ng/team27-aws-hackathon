@@ -245,7 +245,7 @@ private fun MonthlyCalendarContent(
             .background(AppBackground)
             .verticalScroll(rememberScrollState())
     ) {
-        // Calendar Navigation
+        // Calendar Navigation + Grid (통합)
         Card(
             modifier = Modifier
                 .fillMaxWidth()
@@ -254,60 +254,53 @@ private fun MonthlyCalendarContent(
             elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
             shape = RoundedCornerShape(12.dp)
         ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                IconButton(
-                    onClick = { /* TODO */ }
+            Column {
+                // Calendar Navigation
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
-                        text = "<",
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = TabSelected
-                    )
+                    IconButton(
+                        onClick = { /* TODO */ }
+                    ) {
+                        Text(
+                            text = "<",
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = TabSelected
+                        )
+                    }
+                    
+                    TextButton(
+                        onClick = { showDatePicker = true },
+                        colors = ButtonDefaults.textButtonColors(contentColor = TextPrimary)
+                    ) {
+                        Text(
+                            text = currentMonth.format(DateTimeFormatter.ofPattern("yyyy년 M월")),
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+                    
+                    IconButton(
+                        onClick = { /* TODO */ }
+                    ) {
+                        Text(
+                            text = ">",
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = TabSelected
+                        )
+                    }
                 }
                 
-                TextButton(
-                    onClick = { showDatePicker = true },
-                    colors = ButtonDefaults.textButtonColors(contentColor = TextPrimary)
+                // Calendar Grid
+                Column(
+                    modifier = Modifier.padding(16.dp)
                 ) {
-                    Text(
-                        text = currentMonth.format(DateTimeFormatter.ofPattern("yyyy년 M월")),
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                }
-                
-                IconButton(
-                    onClick = { /* TODO */ }
-                ) {
-                    Text(
-                        text = ">",
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = TabSelected
-                    )
-                }
-            }
-        }
-        
-        // Calendar Grid
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp),
-            colors = CardDefaults.cardColors(containerColor = CardBackground),
-            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-            shape = RoundedCornerShape(12.dp)
-        ) {
-            Column(
-                modifier = Modifier.padding(16.dp)
-            ) {
                 val daysOfWeek = listOf("일", "월", "화", "수", "목", "금", "토")
                 Row(
                     modifier = Modifier.fillMaxWidth()
@@ -373,6 +366,7 @@ private fun MonthlyCalendarContent(
                             }
                         }
                     }
+                }
                 }
             }
         }
