@@ -1,3 +1,50 @@
 <resources>
     <string name="app_name">AlcoLook</string>
+    
+    <!-- Navigation -->
+    <string name="nav_home">홈</string>
+    <string name="nav_calendar">캘린더</string>
+    <string name="nav_settings">설정</string>
+    
+    <!-- Home Screen -->
+    <string name="home_title">얼굴 분석</string>
+    <string name="home_camera_preview">카메라 미리보기</string>
+    <string name="home_capture">촬영하기</string>
+    <string name="home_disclaimer">⚠️ 면책 고지\n이 앱은 의료 목적이 아니며, 운전 판단에 사용하지 마세요.</string>
+    
+    <!-- Calendar Screen -->
+    <string name="calendar_title">캘린더</string>
+    <string name="calendar_monthly">월별</string>
+    <string name="calendar_statistics">통계</string>
+    <string name="calendar_no_records">아직 기록이 없어요</string>
+    <string name="calendar_weekly_summary">주간 요약</string>
+    <string name="calendar_monthly_summary">월간 요약</string>
+    <string name="calendar_health_index">건강 지수</string>
+    <string name="calendar_weekly_trend">주별 트렌드</string>
+    
+    <!-- Settings Screen -->
+    <string name="settings_title">설정</string>
+    <string name="settings_profile">프로필</string>
+    <string name="settings_data_management">데이터 관리</string>
+    <string name="settings_help">도움말</string>
+    <string name="settings_gender">성별</string>
+    <string name="settings_age">연령대</string>
+    <string name="settings_weekly_goal">주간 목표</string>
+    <string name="settings_delete_all_data">데이터 전체 삭제</string>
+    <string name="settings_app_info">앱 정보</string>
+    <string name="settings_disclaimer_title">면책 고지</string>
+    <string name="settings_not_set">설정되지 않음</string>
+    <string name="settings_delete_all_subtitle">모든 기록을 삭제합니다</string>
+    <string name="settings_app_version">버전 1.0</string>
+    <string name="settings_disclaimer_subtitle">이용 약관 및 주의사항</string>
+    <string name="settings_bottom_disclaimer">⚠️ 이 앱은 의료 목적이 아니며, 운전 판단에 사용하지 마세요.\n모든 데이터는 로컬에 저장되며 외부로 전송되지 않습니다.</string>
+    
+    <!-- Status Labels -->
+    <string name="status_normal">양호</string>
+    <string name="status_warning">주의</string>
+    <string name="status_danger">폭음</string>
+    
+    <!-- Common -->
+    <string name="days_unit">일</string>
+    <string name="date_move">날짜 이동</string>
 </resources>
