@@ -424,10 +424,26 @@ private fun MonthlyCalendarContent(
                     }
                 } else {
                     selectedDateRecords.forEach { record ->
-                        Text(
-                            text = "${record.type.getDisplayName()} ${record.quantity}${record.unit.getDisplayName()}",
-                            style = MaterialTheme.typography.bodyMedium
-                        )
+                        Column {
+                            Text(
+                                text = "${record.type.getDisplayName()} ${record.quantity}${record.unit.getDisplayName()}",
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.Medium
+                            )
+                            Text(
+                                text = "순수 알코올 ${String.format("%.1f", record.getPureAlcoholGrams())}g (표준잔 ${record.getFormattedStandardDrinks()}잔)",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = TextSecondary
+                            )
+                            if (record.note?.isNotBlank() == true) {
+                                Text(
+                                    text = "📝 ${record.note}",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = TextSecondary
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(8.dp))
+                        }
                     }
                 }
             }

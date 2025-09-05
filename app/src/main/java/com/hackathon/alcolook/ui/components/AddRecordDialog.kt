@@ -215,9 +215,16 @@ fun AddRecordDialog(
                                 text = "${selectedType.getEmoji()} ${if (selectedType == DrinkType.OTHER && customDrinkName.isNotBlank()) customDrinkName else selectedType.getDisplayName()} ${quantity}${selectedUnit.getDisplayName()}",
                                 style = MaterialTheme.typography.bodyMedium
                             )
+                            val pureAlcohol = totalVolume * (customAbv.toFloatOrNull() ?: selectedType.getDefaultAbv()) * 0.789f / 100f
+                            val standardDrinks = pureAlcohol / 8f
                             Text(
                                 text = "총 용량: ${totalVolume}ml, 도수: ${displayAbv}%",
                                 style = MaterialTheme.typography.bodySmall
+                            )
+                            Text(
+                                text = "순수 알코올: ${String.format("%.1f", pureAlcohol)}g (표준잔 ${String.format("%.1f", standardDrinks)}잔)",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.primary
                             )
                         }
                     }
