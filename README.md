@@ -156,13 +156,16 @@ Resources:
 #### **2. Terraform**
 ```hcl
 # terraform/main.tf
-resource "aws_rekognition_collection" "face_collection" {
-  collection_id = "alcolook-faces"
+resource "aws_iam_role" "rekognition_role" {
+  name = "alcolook-rekognition-role"
   
-  tags = {
-    Environment = "production"
-    Project     = "AlcoLook"
-  }
+  assume_role_policy = jsonencode({
+    Statement = [{
+      Effect = "Allow"
+      Principal = { Service = "rekognition.amazonaws.com" }
+      Action = "sts:AssumeRole"
+    }]
+  })
 }
 
 resource "aws_bedrock_agent" "analysis_agent" {
@@ -175,20 +178,19 @@ resource "aws_bedrock_agent" "analysis_agent" {
 #### **3. AWS CDK (TypeScript)**
 ```typescript
 // cdk/lib/alcolook-stack.ts
-import * as cdk from 'aws-cdk-lib';
-import * as rekognition from 'aws-cdk-lib/aws-rekognition';
-import * as bedrock from 'aws-cdk-lib/aws-bedrock';
-
 export class AlcoLookStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
-    // Rekognition Collection
-    const faceCollection = new rekognition.CfnCollection(this, 'FaceCollection', {
-      collectionId: 'alcolook-faces'
+    // Rekognition Role (실시간 분석용)
+    const rekognitionRole = new iam.Role(this, 'RekognitionRole', {
+      assumedBy: new iam.ServicePrincipal('rekognition.amazonaws.com'),
+      managedPolicies: [
+        iam.ManagedPolicy.fromAwsManagedPolicyName('AmazonRekognitionReadOnlyAccess')
+      ]
     });
 
-    // Bedrock Agent
+    // Bedrock Agent (AI 종합 분석용)
     const analysisAgent = new bedrock.CfnAgent(this, 'AnalysisAgent', {
       agentName: 'alcolook-analyzer',
       foundationModel: 'anthropic.claude-3-sonnet'
@@ -216,11 +218,15 @@ cdk deploy
 ```
 
 ### **인프라 구성 요소**
-- **Amazon Rekognition Collection** - 얼굴 분석용 컬렉션
+- **Amazon Rekognition** - 실시간 얼굴 분석 (이미지 저장 없음)
 - **AWS Bedrock Agent** - AI 기반 종합 분석 엔진
 - **IAM Roles & Policies** - 최소 권한 원칙 적용
-- **CloudWatch Logs** - 모니터링 및 로깅
-- **S3 Bucket** - 임시 이미지 저장 (선택사항)
+- **CloudWatch Logs** - 익명화된 분석 결과만 로깅
+
+### **🔒 개인정보 보호 설계**
+- **이미지 저장 없음**: 실시간 분석 후 즉시 삭제
+- **익명화된 데이터**: 개인 식별 불가능한 통계만 저장
+- **최소 권한**: 분석에 필요한 권한만 부여
 
 ## 📊 데이터 모델
 
@@ -286,4 +292,4 @@ data class GyroscopeData(
 
 ---
 
-**Team 27 - AWS Hackathon 2025**
+**Team 27 아마존의 눈물 - AWS Q Developer Hackathon 2025**

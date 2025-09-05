@@ -2,6 +2,13 @@
 
 이 문서는 AlcoLook 앱의 AWS 인프라를 코드로 관리하는 방법을 설명합니다.
 
+## 🔒 개인정보 보호 우선 설계
+
+**AlcoLook은 개인정보 보호를 최우선으로 설계되었습니다:**
+- ❌ **이미지 저장 없음**: 얼굴 사진을 어디에도 저장하지 않음
+- ✅ **실시간 분석**: 분석 후 즉시 삭제
+- ✅ **익명화된 데이터**: 개인 식별 불가능한 통계만 저장
+
 ## 📁 디렉토리 구조
 
 ```
@@ -24,21 +31,17 @@
 ## 🏗️ 관리되는 AWS 리소스
 
 ### 1. IAM Roles
-- **Rekognition Service Role**: 얼굴 분석 권한
+- **Rekognition Service Role**: 실시간 얼굴 분석 권한 (읽기 전용)
 - **Bedrock Service Role**: AI 모델 호출 권한
 
-### 2. S3 Bucket
-- **Image Storage**: 임시 이미지 저장 (1일 후 자동 삭제)
-- **Public Access Block**: 보안을 위한 퍼블릭 액세스 차단
-
-### 3. CloudWatch Logs
-- **Application Log Group**: 앱 로그 수집 (30일 보관)
+### 2. CloudWatch Logs
+- **Application Log Group**: 익명화된 분석 결과만 저장 (30일 보관)
 
 ## 🚀 배포 방법
 
 ### 전제 조건
 - AWS CLI 설치 및 구성
-- 적절한 AWS 권한 (IAM, S3, CloudWatch, Rekognition, Bedrock)
+- 적절한 AWS 권한 (IAM, CloudWatch, Rekognition, Bedrock)
 
 ### 1. AWS CloudFormation
 ```bash
@@ -85,7 +88,7 @@ npx cdk deploy --context environment=dev
 ### 개발 환경 (dev)
 - 리소스 이름: `alcolook-*-dev`
 - 로그 보관: 30일
-- S3 객체 만료: 1일
+- 실시간 분석만
 
 ### 스테이징 환경 (staging)
 - 리소스 이름: `alcolook-*-staging`
@@ -94,7 +97,7 @@ npx cdk deploy --context environment=dev
 ### 프로덕션 환경 (prod)
 - 리소스 이름: `alcolook-*-prod`
 - 강화된 보안 설정
-- 백업 및 모니터링 활성화
+- 모니터링 활성화
 
 ## 🔧 Android 앱 연동
 
@@ -118,8 +121,11 @@ object AwsConfig {
     const val REGION = "us-east-1"
     const val REKOGNITION_ROLE_ARN = "arn:aws:iam::123456789012:role/alcolook-rekognition-role-dev"
     const val BEDROCK_ROLE_ARN = "arn:aws:iam::123456789012:role/alcolook-bedrock-role-dev"
-    const val IMAGE_BUCKET_NAME = "alcolook-images-dev-123456789012"
     const val LOG_GROUP_NAME = "/aws/alcolook/dev"
+    
+    // 개인정보 보호 설정
+    const val STORE_IMAGES = false  // 이미지 저장 금지
+    const val ANONYMOUS_ONLY = true // 익명화된 데이터만
 }
 ```
 
@@ -142,24 +148,43 @@ cd cdk
 npx cdk destroy --context environment=dev
 ```
 
-## 🔒 보안 고려사항
+## 🔒 개인정보 보호 및 보안
 
-1. **최소 권한 원칙**: IAM 역할은 필요한 최소 권한만 부여
-2. **S3 보안**: 퍼블릭 액세스 완전 차단
-3. **데이터 보관**: 임시 이미지는 1일 후 자동 삭제
-4. **로그 관리**: CloudWatch 로그는 30일 후 자동 삭제
-5. **태그 관리**: 모든 리소스에 프로젝트 및 환경 태그 적용
+### 1. 데이터 처리 원칙
+- **최소 수집**: 분석에 필요한 데이터만
+- **즉시 삭제**: 원본 이미지는 분석 후 즉시 삭제
+- **익명화**: 개인 식별 불가능한 통계만 저장
 
-## 📊 비용 최적화
+### 2. 저장되는 데이터 예시
+```json
+{
+  "timestamp": "2025-01-06T03:45:00Z",
+  "analysis": {
+    "eye_closure_ratio": 0.7,
+    "mouth_opening_ratio": 0.3,
+    "face_tilt_degrees": 15.2,
+    "confidence_score": 0.85
+  },
+  "intoxication_level": "moderate"
+}
+```
 
-1. **S3 Lifecycle**: 임시 파일 자동 삭제로 스토리지 비용 절약
-2. **CloudWatch Logs**: 로그 보관 기간 제한으로 비용 관리
-3. **리소스 태깅**: 비용 추적 및 관리 용이
-4. **환경별 분리**: 개발/스테이징/프로덕션 환경 독립 관리
+### 3. 저장되지 않는 데이터
+- ❌ 얼굴 이미지
+- ❌ 개인 식별 정보
+- ❌ 위치 정보
+- ❌ 디바이스 정보
+
+## 💰 비용 최적화
+
+1. **S3 제거**: 스토리지 비용 완전 절약
+2. **실시간 처리**: Rekognition 사용량 최소화
+3. **CloudWatch Logs**: 30일 후 자동 삭제로 비용 관리
+4. **리소스 태깅**: 비용 추적 및 관리 용이
 
 ## 🔍 모니터링 및 로깅
 
-- **CloudWatch Logs**: 애플리케이션 로그 중앙 집중 관리
+- **CloudWatch Logs**: 익명화된 분석 결과만 저장
 - **AWS CloudTrail**: API 호출 추적 (별도 설정 필요)
 - **Cost Explorer**: 비용 모니터링 (AWS 콘솔에서 확인)
 
@@ -178,3 +203,17 @@ aws cloudformation describe-stack-events --stack-name alcolook-stack-dev
 # CloudWatch 로그
 aws logs describe-log-groups --log-group-name-prefix "/aws/alcolook"
 ```
+
+## 🎯 아키텍처 다이어그램
+
+```
+📱 Android App
+    ↓ (이미지 직접 전송)
+👁️ Amazon Rekognition (실시간 분석)
+    ↓ (분석 결과만)
+🤖 AWS Bedrock (AI 종합 분석)
+    ↓ (익명 통계만)
+📋 CloudWatch Logs
+```
+
+**핵심**: 개인정보는 저장하지 않고, 분석 결과만 활용하는 프라이버시 우선 아키텍처

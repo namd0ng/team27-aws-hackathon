@@ -1,6 +1,5 @@
 import * as cdk from 'aws-cdk-lib';
 import * as iam from 'aws-cdk-lib/aws-iam';
-import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as logs from 'aws-cdk-lib/aws-logs';
 import { Construct } from 'constructs';
 
@@ -15,16 +14,16 @@ export class AlcoLookStack extends cdk.Stack {
 
     const { environment, projectName } = props;
 
-    // IAM Role for Rekognition
+    // IAM Role for Rekognition (Real-time analysis only)
     const rekognitionRole = new iam.Role(this, 'RekognitionRole', {
       roleName: `${projectName}-rekognition-role-${environment}`,
       assumedBy: new iam.ServicePrincipal('rekognition.amazonaws.com'),
       managedPolicies: [
-        iam.ManagedPolicy.fromAwsManagedPolicyName('AmazonRekognitionFullAccess'),
+        iam.ManagedPolicy.fromAwsManagedPolicyName('AmazonRekognitionReadOnlyAccess'),
       ],
     });
 
-    // IAM Role for Bedrock
+    // IAM Role for Bedrock (AI Analysis)
     const bedrockRole = new iam.Role(this, 'BedrockRole', {
       roleName: `${projectName}-bedrock-role-${environment}`,
       assumedBy: new iam.ServicePrincipal('bedrock.amazonaws.com'),
@@ -44,22 +43,7 @@ export class AlcoLookStack extends cdk.Stack {
       },
     });
 
-    // S3 Bucket for temporary image storage
-    const imageBucket = new s3.Bucket(this, 'ImageStorageBucket', {
-      bucketName: `${projectName}-images-${environment}-${this.account}`,
-      blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
-      lifecycleRules: [
-        {
-          id: 'delete-temp-images',
-          enabled: true,
-          expiration: cdk.Duration.days(1),
-        },
-      ],
-      removalPolicy: cdk.RemovalPolicy.DESTROY,
-      autoDeleteObjects: true,
-    });
-
-    // CloudWatch Log Group
+    // CloudWatch Log Group (Anonymous analytics only)
     const logGroup = new logs.LogGroup(this, 'ApplicationLogGroup', {
       logGroupName: `/aws/alcolook/${environment}`,
       retention: logs.RetentionDays.ONE_MONTH,
@@ -77,12 +61,6 @@ export class AlcoLookStack extends cdk.Stack {
       value: bedrockRole.roleArn,
       description: 'ARN of the Bedrock service role',
       exportName: `${projectName}-bedrock-role-${environment}`,
-    });
-
-    new cdk.CfnOutput(this, 'ImageBucketName', {
-      value: imageBucket.bucketName,
-      description: 'Name of the S3 bucket for image storage',
-      exportName: `${projectName}-image-bucket-${environment}`,
     });
 
     new cdk.CfnOutput(this, 'LogGroupName', {

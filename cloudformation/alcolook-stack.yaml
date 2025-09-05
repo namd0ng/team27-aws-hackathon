@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: 'AlcoLook - AWS Resources for Face Analysis and AI Processing'
+Description: 'AlcoLook - AWS Resources for Real-time Face Analysis (Privacy-First)'
 
 Parameters:
   Environment:
@@ -14,7 +14,7 @@ Parameters:
     Description: Project name for resource naming
 
 Resources:
-  # IAM Role for Rekognition
+  # IAM Role for Rekognition (Real-time analysis only)
   RekognitionServiceRole:
     Type: AWS::IAM::Role
     Properties:
@@ -27,14 +27,14 @@ Resources:
               Service: rekognition.amazonaws.com
             Action: sts:AssumeRole
       ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/AmazonRekognitionFullAccess
+        - arn:aws:iam::aws:policy/AmazonRekognitionReadOnlyAccess
       Tags:
         - Key: Project
           Value: !Ref ProjectName
         - Key: Environment
           Value: !Ref Environment
 
-  # IAM Role for Bedrock
+  # IAM Role for Bedrock (AI Analysis)
   BedrockServiceRole:
     Type: AWS::IAM::Role
     Properties:
@@ -62,28 +62,7 @@ Resources:
         - Key: Environment
           Value: !Ref Environment
 
-  # S3 Bucket for temporary image storage
-  ImageStorageBucket:
-    Type: AWS::S3::Bucket
-    Properties:
-      BucketName: !Sub '${ProjectName}-images-${Environment}-${AWS::AccountId}'
-      PublicAccessBlockConfiguration:
-        BlockPublicAcls: true
-        BlockPublicPolicy: true
-        IgnorePublicAcls: true
-        RestrictPublicBuckets: true
-      LifecycleConfiguration:
-        Rules:
-          - Id: DeleteTempImages
-            Status: Enabled
-            ExpirationInDays: 1
-      Tags:
-        - Key: Project
-          Value: !Ref ProjectName
-        - Key: Environment
-          Value: !Ref Environment
-
-  # CloudWatch Log Group
+  # CloudWatch Log Group (Anonymous analytics only)
   ApplicationLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
@@ -107,12 +86,6 @@ Outputs:
     Value: !GetAtt BedrockServiceRole.Arn
     Export:
       Name: !Sub '${ProjectName}-bedrock-role-${Environment}'
-
-  ImageBucketName:
-    Description: Name of the S3 bucket for image storage
-    Value: !Ref ImageStorageBucket
-    Export:
-      Name: !Sub '${ProjectName}-image-bucket-${Environment}'
 
   LogGroupName:
     Description: Name of the CloudWatch log group
