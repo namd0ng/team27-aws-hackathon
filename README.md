@@ -16,18 +16,9 @@ AlcoLook은 얼굴 분석을 통한 음주 측정 및 관리 앱입니다.
 
 ### Frontend (Android)
 - **Kotlin** + **Jetpack Compose** (Material 3)
-- **Navigation Compose** (3-tab navigation)
-- **CameraX** (카메라 기능)
-- **ML Kit** (얼굴 검출)
-- **OkHttp** (네트워크 통신)
-
-### Backend (AWS)
-- **AWS Lambda** (Python + Node.js)
-- **Amazon DynamoDB** (데이터 저장)
-- **API Gateway** (REST API)
-- **JWT** 인증
-
-## 📁 프로젝트 구조
+- **Navigation Compose** for 3-tab navigation
+- **Amazon Rekognition** for face analysis + **DynamoDB** for cloud storage
+- **minSdk 26**, **compileSdk 36**, **targetSdk 36**
 
 ```
 team27-aws-hackathon/
@@ -102,19 +93,8 @@ cd backend
 }
 ```
 
-## 🔐 인증
-
-- JWT 토큰 기반 인증
-- 7일 만료 정책
-- 로그인/회원가입/비밀번호 찾기 지원
-
-## ⚠️ 면책 고지
-
-이 앱은 의료 목적이 아니며, 운전 판단에 사용하지 마세요.
-모든 데이터는 개인 정보 보호를 위해 안전하게 관리됩니다.
-
-## 👥 Team27
-
-AWS 해커톤 참가팀
-- 음주 측정 및 관리 솔루션 개발
-- DynamoDB 기반 클라우드 아키텍처
+### 다음 단계 (구현 예정)
+- CameraX 통합
+- DynamoDB 연동
+- Hilt DI
+- 실제 데이터 모델 및 비즈니스 로직
