@@ -3,7 +3,9 @@ package com.hackathon.alcolook.ui.calendar
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -15,22 +17,30 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.hackathon.alcolook.ui.theme.*
-
-enum class DrinkingStatus {
-    NORMAL, WARNING, DANGER
-}
+import com.hackathon.alcolook.data.model.DrinkType
+import com.hackathon.alcolook.data.model.DrinkUnit
+import com.hackathon.alcolook.data.model.DrinkingStatus
+import com.hackathon.alcolook.ui.viewmodel.SimpleCalendarViewModel
+import com.hackathon.alcolook.ui.components.AddRecordDialog
+import com.hackathon.alcolook.ui.components.DrinkChart
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 
 @Composable
 fun CalendarDayCell(
     day: Int,
     isToday: Boolean = false,
-    status: DrinkingStatus
+    isSelected: Boolean = false,
+    status: DrinkingStatus = DrinkingStatus.APPROPRIATE,
+    hasRecord: Boolean = false,
+    onClick: () -> Unit = {}
 ) {
     val backgroundColor = when {
         isToday -> CalendarToday
-        status == DrinkingStatus.WARNING -> WarningSoft
-        status == DrinkingStatus.DANGER -> DangerSoft
+        isSelected -> CalendarSelected
         else -> Color.Transparent
     }
     
@@ -44,23 +54,47 @@ fun CalendarDayCell(
             .size(32.dp)
             .clip(CircleShape)
             .background(backgroundColor)
-            .clickable { /* TODO: Select date */ },
+            .clickable { onClick() },
         contentAlignment = Alignment.Center
     ) {
         Text(
             text = day.toString(),
             style = MaterialTheme.typography.bodyMedium,
             color = textColor,
-            fontWeight = if (isToday) FontWeight.SemiBold else FontWeight.Normal
+            fontWeight = if (isToday || isSelected) FontWeight.SemiBold else FontWeight.Normal
         )
+        
+        // 기록이 있는 날만 상태별 색상 점 표시
+        if (hasRecord) {
+            Box(
+                modifier = Modifier
+                    .size(6.dp)
+                    .clip(CircleShape)
+                    .background(
+                        when (status) {
+                            DrinkingStatus.APPROPRIATE -> androidx.compose.ui.graphics.Color.Green
+                            DrinkingStatus.CAUTION -> androidx.compose.ui.graphics.Color(0xFFFF9800)
+                            DrinkingStatus.EXCESSIVE -> androidx.compose.ui.graphics.Color.Red
+                            DrinkingStatus.DANGEROUS -> androidx.compose.ui.graphics.Color.Black
+                        }
+                    )
+                    .align(Alignment.BottomCenter)
+                    .offset(y = (-2).dp)
+            )
+        }
     }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CalendarScreen() {
-    var selectedTab by remember { mutableIntStateOf(0) }
-    val tabs = listOf("월별", "통계")
+fun CalendarScreen(
+    viewModel: SimpleCalendarViewModel = viewModel()
+) {
+    val selectedTab by viewModel.selectedTab.collectAsStateWithLifecycle()
+    val tabs = listOf("📅 월별", "📊 통계")
+    var showAddDialog by remember { mutableStateOf(false) }
+    var showEditDialog by remember { mutableStateOf(false) }
+    var editingRecord by remember { mutableStateOf<com.hackathon.alcolook.data.model.DrinkRecord?>(null) }
     
     Column(
         modifier = Modifier
@@ -80,20 +114,57 @@ fun CalendarScreen() {
                 color = TextPrimary
             )
             
-            Button(
-                onClick = { /* TODO: Add record */ },
+            Row(
                 modifier = Modifier.align(Alignment.CenterEnd),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = TabSelected
-                ),
-                shape = RoundedCornerShape(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Text(
-                    text = "기록 추가",
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = CardBackground
-                )
+                Button(
+                    onClick = { viewModel.selectTab(0) },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = androidx.compose.ui.graphics.Color.Green
+                    ),
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Text(
+                        text = "캘린더",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = CardBackground
+                    )
+                }
+                
+                Button(
+                    onClick = { viewModel.selectTab(1) },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = androidx.compose.ui.graphics.Color.Blue
+                    ),
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Text(
+                        text = "통계",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = CardBackground
+                    )
+                }
+                
+                Button(
+                    onClick = { 
+                        android.util.Log.d("AlcoLook", "기록 추가 버튼 클릭됨")
+                        showAddDialog = true 
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = androidx.compose.ui.graphics.Color.Red
+                    ),
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Text(
+                        text = "기록 추가",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = CardBackground
+                    )
+                }
             }
         }
         
@@ -113,7 +184,7 @@ fun CalendarScreen() {
             tabs.forEachIndexed { index, title ->
                 Tab(
                     selected = selectedTab == index,
-                    onClick = { selectedTab = index },
+                    onClick = { viewModel.selectTab(index) },
                     modifier = Modifier.height(48.dp)
                 ) {
                     Text(
@@ -127,18 +198,72 @@ fun CalendarScreen() {
         }
         
         when (selectedTab) {
-            0 -> MonthlyCalendarContent()
-            1 -> StatisticsContent()
+            0 -> MonthlyCalendarContent(viewModel) { showAddDialog = true }
+            1 -> StatisticsContent(viewModel)
+        }
+        
+        if (showAddDialog) {
+            println("DEBUG: AddRecordDialog 표시 중")
+            AddRecordDialog(
+                onDismiss = { showAddDialog = false },
+                onConfirm = { type, unit, quantity, abv, drinkName, note ->
+                    viewModel.addDrinkRecord(
+                        type = type,
+                        unit = unit, 
+                        quantity = quantity,
+                        customAbv = abv,
+                        customDrinkName = drinkName,
+                        note = note
+                    )
+                    showAddDialog = false
+                }
+            )
+        }
+        
+
+        
+        if (showEditDialog && editingRecord != null) {
+            com.hackathon.alcolook.ui.components.EditRecordDialog(
+                record = editingRecord!!,
+                onDismiss = { 
+                    showEditDialog = false
+                    editingRecord = null
+                },
+                onConfirm = { type: DrinkType, unit: DrinkUnit, quantity: Int, abv: Float?, note: String? ->
+                    viewModel.updateDrinkRecord(
+                        recordId = editingRecord!!.id,
+                        type = type,
+                        unit = unit,
+                        quantity = quantity,
+                        customAbv = abv,
+                        note = note
+                    )
+                    showEditDialog = false
+                    editingRecord = null
+                }
+            )
         }
     }
 }
 
 @Composable
-private fun MonthlyCalendarContent() {
+private fun MonthlyCalendarContent(
+    viewModel: SimpleCalendarViewModel,
+    onAddRecord: () -> Unit
+) {
+    val selectedDate by viewModel.selectedDate.collectAsStateWithLifecycle()
+    val records by viewModel.records.collectAsStateWithLifecycle()
+    val dailyStatusMap by viewModel.dailyStatusMap.collectAsStateWithLifecycle()
+    val selectedDateRecords = records.filter { it.date == selectedDate }
+    var showDetailDialog by remember { mutableStateOf(false) }
+    val today = LocalDate.now()
+    val currentMonth = java.time.YearMonth.now()
+    
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(AppBackground)
+            .verticalScroll(rememberScrollState())
     ) {
         Card(
             modifier = Modifier
@@ -156,7 +281,7 @@ private fun MonthlyCalendarContent() {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 IconButton(
-                    onClick = { /* TODO: Previous month */ }
+                    onClick = { /* TODO */ }
                 ) {
                     Text(
                         text = "<",
@@ -171,14 +296,14 @@ private fun MonthlyCalendarContent() {
                     colors = ButtonDefaults.textButtonColors(contentColor = TextPrimary)
                 ) {
                     Text(
-                        text = "2025년 9월",
+                        text = currentMonth.format(DateTimeFormatter.ofPattern("yyyy년 M월")),
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.SemiBold
                     )
                 }
                 
                 IconButton(
-                    onClick = { /* TODO: Next month */ }
+                    onClick = { /* TODO */ }
                 ) {
                     Text(
                         text = ">",
@@ -228,9 +353,9 @@ private fun MonthlyCalendarContent() {
                 
                 Spacer(modifier = Modifier.height(8.dp))
                 
-                val daysInMonth = (1..30).toList()
-                val startPadding = 0
-                val totalCells = startPadding + daysInMonth.size
+                val daysInMonth = (1..currentMonth.lengthOfMonth()).toList()
+                val firstDayOfWeek = currentMonth.atDay(1).dayOfWeek.value % 7
+                val totalCells = firstDayOfWeek + daysInMonth.size
                 val rows = (totalCells + 6) / 7
                 
                 repeat(rows) { row ->
@@ -239,7 +364,7 @@ private fun MonthlyCalendarContent() {
                     ) {
                         repeat(7) { col ->
                             val cellIndex = row * 7 + col
-                            val dayNumber = cellIndex - startPadding + 1
+                            val dayNumber = cellIndex - firstDayOfWeek + 1
                             
                             Box(
                                 modifier = Modifier
@@ -248,15 +373,19 @@ private fun MonthlyCalendarContent() {
                                     .padding(2.dp),
                                 contentAlignment = Alignment.Center
                             ) {
-                                if (dayNumber in 1..30) {
+                                if (dayNumber in 1..currentMonth.lengthOfMonth()) {
+                                    val date = currentMonth.atDay(dayNumber)
+                                    val hasRecord = records.any { it.date == date }
+                                    val isToday = date == today
+                                    val isSelected = date == selectedDate
+                                    
                                     CalendarDayCell(
                                         day = dayNumber,
-                                        isToday = dayNumber == 5,
-                                        status = when {
-                                            dayNumber % 7 == 0 -> DrinkingStatus.DANGER
-                                            dayNumber % 5 == 0 -> DrinkingStatus.WARNING
-                                            else -> DrinkingStatus.NORMAL
-                                        }
+                                        isToday = isToday,
+                                        isSelected = isSelected,
+                                        status = dailyStatusMap[date] ?: DrinkingStatus.APPROPRIATE,
+                                        hasRecord = hasRecord,
+                                        onClick = { viewModel.selectDate(date) }
                                     )
                                 }
                             }
@@ -285,14 +414,18 @@ private fun MonthlyCalendarContent() {
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "9월 5일 기록",
+                        text = "${selectedDate.format(DateTimeFormatter.ofPattern("M월 d일"))} 기록",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.SemiBold,
                         color = TextPrimary
                     )
                     
                     OutlinedButton(
-                        onClick = { /* TODO: Show summary */ },
+                        onClick = { 
+                            if (selectedDateRecords.isNotEmpty()) {
+                                showDetailDialog = true 
+                            }
+                        },
                         colors = ButtonDefaults.outlinedButtonColors(
                             contentColor = TabSelected
                         ),
@@ -308,51 +441,189 @@ private fun MonthlyCalendarContent() {
                 
                 Spacer(modifier = Modifier.height(16.dp))
                 
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(
-                        text = "🍺",
-                        fontSize = 32.sp
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = "기록된 음주가 없습니다",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = TextSecondary
-                    )
-                    Spacer(modifier = Modifier.height(12.dp))
-                    
-                    Button(
-                        onClick = { /* TODO: Add first record */ },
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = TabSelected
-                        ),
-                        shape = RoundedCornerShape(8.dp)
+                val selectedDateRecords = records.filter { it.date == selectedDate }
+                val selectedDateStatus = dailyStatusMap[selectedDate] ?: DrinkingStatus.APPROPRIATE
+                val totalAlcohol = selectedDateRecords.sumOf { it.getPureAlcoholGrams().toDouble() }.toFloat()
+                val totalStandardDrinks = selectedDateRecords.sumOf { it.getStandardDrinks().toDouble() }.toFloat()
+                
+                // 요약 정보 표시
+                if (selectedDateRecords.isNotEmpty()) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Text(
-                            text = "첫 기록 추가하기",
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Medium,
-                            color = CardBackground
+                            text = "총 음주량: ${String.format("%.1f", totalAlcohol)}g",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = TextSecondary
                         )
+                        Text(
+                            text = "표준잔수: ${String.format("%.1f", totalStandardDrinks)}잔",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = TextSecondary
+                        )
+                        Text(
+                            text = when(selectedDateStatus) {
+                                DrinkingStatus.APPROPRIATE -> "적정"
+                                DrinkingStatus.CAUTION -> "주의"
+                                DrinkingStatus.EXCESSIVE -> "과음"
+                                DrinkingStatus.DANGEROUS -> "위험"
+                            },
+                            style = MaterialTheme.typography.bodySmall,
+                            fontWeight = FontWeight.SemiBold,
+                            color = when(selectedDateStatus) {
+                                DrinkingStatus.APPROPRIATE -> androidx.compose.ui.graphics.Color.Green
+                                DrinkingStatus.CAUTION -> androidx.compose.ui.graphics.Color(0xFFFF9800)
+                                DrinkingStatus.EXCESSIVE -> androidx.compose.ui.graphics.Color.Red
+                                DrinkingStatus.DANGEROUS -> androidx.compose.ui.graphics.Color.Black
+                            }
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(12.dp))
+                }
+                if (selectedDateRecords.isEmpty()) {
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = "🍺",
+                            fontSize = 32.sp
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "기록된 음주가 없습니다",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = TextSecondary
+                        )
+                        Spacer(modifier = Modifier.height(12.dp))
+                        
+                        Button(
+                            onClick = { 
+                                println("DEBUG: 첫 기록 추가 버튼 클릭됨")
+                                onAddRecord() 
+                            },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = androidx.compose.ui.graphics.Color.Green
+                            ),
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Text(
+                                text = "첫 기록 추가하기",
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = CardBackground
+                            )
+                        }
+                    }
+                } else {
+                    selectedDateRecords.forEach { record ->
+                        Column {
+                            Text(
+                                text = "${record.type.getDisplayName()} ${record.quantity}${record.unit.getDisplayName()}",
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.Medium
+                            )
+                            Text(
+                                text = "순수 알코올 ${String.format("%.1f", record.getPureAlcoholGrams())}g (표준잔 ${record.getFormattedStandardDrinks()}잔)",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = TextSecondary
+                            )
+                            if (record.note?.isNotBlank() == true) {
+                                Text(
+                                    text = "📝 ${record.note}",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = TextSecondary
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(8.dp))
+                        }
                     }
                 }
             }
+        }
+        
+        if (showDetailDialog) {
+            val dailyStatusMap by viewModel.dailyStatusMap.collectAsStateWithLifecycle()
+            val selectedDateStatus = dailyStatusMap[selectedDate] ?: DrinkingStatus.APPROPRIATE
+            val totalAlcohol = selectedDateRecords.sumOf { it.getPureAlcoholGrams().toDouble() }.toFloat()
+            val totalStandardDrinks = selectedDateRecords.sumOf { it.getStandardDrinks().toDouble() }.toFloat()
+            
+            com.hackathon.alcolook.ui.components.RecordDetailDialog(
+                records = selectedDateRecords,
+                selectedDate = selectedDate,
+                dailyStatus = selectedDateStatus,
+                totalAlcohol = totalAlcohol,
+                totalStandardDrinks = totalStandardDrinks,
+                onDismiss = { showDetailDialog = false },
+                onEditRecord = null,
+                onDeleteRecord = { record ->
+                    viewModel.deleteDrinkRecord(record.id)
+                }
+            )
         }
     }
 }
 
 @Composable
-private fun StatisticsContent() {
-    var selectedPeriod by remember { mutableIntStateOf(0) }
+private fun StatisticsContent(
+    viewModel: SimpleCalendarViewModel
+) {
+    val selectedPeriod by viewModel.selectedPeriod.collectAsStateWithLifecycle()
+    val weeklyStats by viewModel.weeklyStats.collectAsStateWithLifecycle()
+    val monthlyStats by viewModel.monthlyStats.collectAsStateWithLifecycle()
+    val healthStatus by viewModel.healthStatus.collectAsStateWithLifecycle()
+    val weeklyChartData by viewModel.weeklyChartData.collectAsStateWithLifecycle()
+    val monthlyChartData by viewModel.monthlyChartData.collectAsStateWithLifecycle()
+    val weeklyDrinkTypeStats by viewModel.weeklyDrinkTypeStats.collectAsStateWithLifecycle()
+    val monthlyDrinkTypeStats by viewModel.monthlyDrinkTypeStats.collectAsStateWithLifecycle()
     val periods = listOf("주간 요약", "월간 요약")
+    
+    val currentStats = if (selectedPeriod == 0) weeklyStats else monthlyStats
+    val currentChartData = if (selectedPeriod == 0) weeklyChartData else monthlyChartData
+    val hasData = if (selectedPeriod == 0) weeklyStats.totalStandardDrinks > 0 else monthlyStats.totalStandardDrinks > 0
+    
+    // 선택된 기간에 맞는 건강 상태 및 진행률 계산
+    val isMale = true // TODO: 사용자 성별 가져오기, 기본값 남성
+    val currentHealthStatus = if (selectedPeriod == 0) {
+        // 주간 기준
+        val weeklyAlcohol = weeklyStats.totalStandardDrinks * 8f // 표준잔2 -> 알코올(g)
+        when {
+            weeklyAlcohol <= if (isMale) 196f else 98f -> DrinkingStatus.APPROPRIATE // 28g * 7일
+            weeklyAlcohol <= if (isMale) 392f else 294f -> DrinkingStatus.CAUTION // 56g * 7일
+            weeklyAlcohol <= if (isMale) 490f else 392f -> DrinkingStatus.EXCESSIVE // 70g * 7일
+            else -> DrinkingStatus.DANGEROUS
+        }
+    } else {
+        // 월간 기준
+        val monthlyAlcohol = monthlyStats.totalStandardDrinks * 8f
+        val daysInMonth = java.time.LocalDate.now().lengthOfMonth()
+        when {
+            monthlyAlcohol <= if (isMale) (28f * daysInMonth) else (14f * daysInMonth) -> DrinkingStatus.APPROPRIATE
+            monthlyAlcohol <= if (isMale) (56f * daysInMonth) else (42f * daysInMonth) -> DrinkingStatus.CAUTION
+            monthlyAlcohol <= if (isMale) (70f * daysInMonth) else (56f * daysInMonth) -> DrinkingStatus.EXCESSIVE
+            else -> DrinkingStatus.DANGEROUS
+        }
+    }
+    
+    val progressValue = if (selectedPeriod == 0) {
+        // 주간 진행률
+        val weeklyAlcohol = weeklyStats.totalStandardDrinks * 8f
+        val weeklyLimit = if (isMale) 196f else 98f // 주간 적정 한계
+        (weeklyAlcohol / weeklyLimit).coerceAtMost(1f)
+    } else {
+        // 월간 진행률
+        val monthlyAlcohol = monthlyStats.totalStandardDrinks * 8f
+        val daysInMonth = java.time.LocalDate.now().lengthOfMonth()
+        val monthlyLimit = if (isMale) (28f * daysInMonth) else (14f * daysInMonth)
+        (monthlyAlcohol / monthlyLimit).coerceAtMost(1f)
+    }
     
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(AppBackground)
+            .verticalScroll(rememberScrollState())
             .padding(16.dp)
     ) {
         Row(
@@ -361,7 +632,7 @@ private fun StatisticsContent() {
         ) {
             periods.forEachIndexed { index, period ->
                 FilterChip(
-                    onClick = { selectedPeriod = index },
+                    onClick = { viewModel.selectPeriod(index) },
                     label = { 
                         Text(
                             text = period,
@@ -381,28 +652,55 @@ private fun StatisticsContent() {
         
         Spacer(modifier = Modifier.height(16.dp))
         
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(containerColor = CalendarSelected),
-            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-            shape = RoundedCornerShape(12.dp)
-        ) {
-            Column(
-                modifier = Modifier.padding(20.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+        if (!hasData) {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = CalendarSelected),
+                elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+                shape = RoundedCornerShape(12.dp)
             ) {
-                Text(
-                    text = "🐕",
-                    fontSize = 48.sp
-                )
-                Spacer(modifier = Modifier.height(12.dp))
-                Text(
-                    text = "멍멍! 적당한 음주 패턴이에요. 건강한 음주 습관을 유지하고 계시네요! 👏",
-                    style = MaterialTheme.typography.bodyLarge,
-                    textAlign = TextAlign.Center,
-                    fontWeight = FontWeight.Medium,
-                    color = TextPrimary
-                )
+                Column(
+                    modifier = Modifier.padding(20.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = "🐕",
+                        fontSize = 48.sp
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Text(
+                        text = "아직 기록이 없어요! 음주 기록을 추가해보세요.",
+                        style = MaterialTheme.typography.bodyLarge,
+                        textAlign = TextAlign.Center,
+                        fontWeight = FontWeight.Medium,
+                        color = TextPrimary
+                    )
+                }
+            }
+        } else {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = CalendarSelected),
+                elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Column(
+                    modifier = Modifier.padding(20.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = "🐕",
+                        fontSize = 48.sp
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Text(
+                        text = viewModel.getCharacterComment(currentHealthStatus),
+                        style = MaterialTheme.typography.bodyLarge,
+                        textAlign = TextAlign.Center,
+                        fontWeight = FontWeight.Medium,
+                        color = TextPrimary
+                    )
+                }
             }
         }
         
@@ -426,7 +724,7 @@ private fun StatisticsContent() {
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = "주간 건강 지수",
+                        text = "건강 지수",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.SemiBold,
                         color = TextPrimary
@@ -445,26 +743,45 @@ private fun StatisticsContent() {
                         color = TextSecondary
                     )
                     Text(
-                        text = "좋음",
+                        text = when(currentHealthStatus) {
+                            DrinkingStatus.APPROPRIATE -> "적정"
+                            DrinkingStatus.CAUTION -> "주의"
+                            DrinkingStatus.EXCESSIVE -> "과음"
+                            DrinkingStatus.DANGEROUS -> "위험"
+                        },
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.SemiBold,
-                        color = StatusNormal
+                        color = when(currentHealthStatus) {
+                            DrinkingStatus.APPROPRIATE -> androidx.compose.ui.graphics.Color.Green
+                            DrinkingStatus.CAUTION -> androidx.compose.ui.graphics.Color(0xFFFF9800)
+                            DrinkingStatus.EXCESSIVE -> androidx.compose.ui.graphics.Color.Red
+                            DrinkingStatus.DANGEROUS -> androidx.compose.ui.graphics.Color.Black
+                        }
                     )
                 }
                 
                 Spacer(modifier = Modifier.height(8.dp))
                 
                 LinearProgressIndicator(
-                    progress = 0.3f,
+                    progress = progressValue,
                     modifier = Modifier.fillMaxWidth(),
-                    color = StatusNormal,
+                    color = when(currentHealthStatus) {
+                        DrinkingStatus.APPROPRIATE -> androidx.compose.ui.graphics.Color.Green
+                        DrinkingStatus.CAUTION -> androidx.compose.ui.graphics.Color(0xFFFF9800)
+                        DrinkingStatus.EXCESSIVE -> androidx.compose.ui.graphics.Color.Red
+                        DrinkingStatus.DANGEROUS -> androidx.compose.ui.graphics.Color.Black
+                    },
                     trackColor = AppBackground
                 )
                 
                 Spacer(modifier = Modifier.height(8.dp))
                 
                 Text(
-                    text = "일평균 0.5잔 (3.5잔/7일)",
+                    text = if (selectedPeriod == 0) {
+                        "일평균 ${String.format("%.1f", weeklyStats.averagePerDay)}잔 (총 ${String.format("%.1f", weeklyStats.totalStandardDrinks)}잔)"
+                    } else {
+                        "일평균 ${String.format("%.1f", monthlyStats.averagePerDay)}잔 (총 ${String.format("%.1f", monthlyStats.totalStandardDrinks)}잔)"
+                    },
                     style = MaterialTheme.typography.bodySmall,
                     color = TextSecondary
                 )
@@ -473,9 +790,48 @@ private fun StatisticsContent() {
         
         Spacer(modifier = Modifier.height(16.dp))
         
+        if (hasData) {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = CardBackground),
+                elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp)
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "📈",
+                            fontSize = 16.sp
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = if (selectedPeriod == 0) "주간 트렌드" else "월간 트렌드",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            color = TextPrimary
+                        )
+                    }
+                    
+                    Spacer(modifier = Modifier.height(16.dp))
+                    
+                    DrinkChart(
+                        data = currentChartData,
+                        isWeekly = selectedPeriod == 0,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            }
+            
+            Spacer(modifier = Modifier.height(16.dp))
+        }
+        
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Card(
                 modifier = Modifier.weight(1f),
@@ -503,7 +859,11 @@ private fun StatisticsContent() {
                     }
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = "3.5",
+                        text = if (selectedPeriod == 0) {
+                            String.format("%.1f", weeklyStats.totalStandardDrinks)
+                        } else {
+                            String.format("%.1f", monthlyStats.totalStandardDrinks)
+                        },
                         style = MaterialTheme.typography.headlineMedium,
                         fontWeight = FontWeight.Bold,
                         color = TextPrimary
@@ -539,9 +899,14 @@ private fun StatisticsContent() {
                             style = MaterialTheme.typography.bodySmall,
                             color = TextSecondary
                         )
+                    }
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = "소주",
+                        text = if (selectedPeriod == 0 && weeklyStats.totalStandardDrinks > 0) {
+                            weeklyStats.favoriteType.getDisplayName()
+                        } else {
+                            "-"
+                        },
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.SemiBold,
                         color = TextPrimary
@@ -557,103 +922,66 @@ private fun StatisticsContent() {
         
         Spacer(modifier = Modifier.height(16.dp))
         
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(containerColor = CardBackground),
-            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-            shape = RoundedCornerShape(12.dp)
-        ) {
-            Column(
-                modifier = Modifier.padding(16.dp)
+        // 술 종류별 통계
+        val currentDrinkTypeStats = if (selectedPeriod == 0) weeklyDrinkTypeStats else monthlyDrinkTypeStats
+        if (hasData && currentDrinkTypeStats.isNotEmpty()) {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = CardBackground),
+                elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+                shape = RoundedCornerShape(12.dp)
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically
+                Column(
+                    modifier = Modifier.padding(16.dp)
                 ) {
-                    Text(
-                        text = "📸",
-                        fontSize = 16.sp
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = "얼굴 분석 결과",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        color = TextPrimary
-                    )
-                }
-                
-                Spacer(modifier = Modifier.height(16.dp))
-                
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(24.dp)
-                ) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "2",
-                            style = MaterialTheme.typography.headlineMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = TextPrimary
+                            text = "🍻",
+                            fontSize = 16.sp
                         )
+                        Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = "분석 횟수",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = TextSecondary
+                            text = "술 종류별 통계",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            color = TextPrimary
                         )
                     }
                     
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Text(
-                            text = "79%",
-                            style = MaterialTheme.typography.headlineMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = TextPrimary
-                        )
-                        Text(
-                            text = "평균 확률",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = TextSecondary
-                        )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    
+                    currentDrinkTypeStats.take(5).forEach { (type, amount) ->
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = type.getEmoji(),
+                                    fontSize = 16.sp
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = type.getDisplayName(),
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                            }
+                            Text(
+                                text = "${String.format("%.1f", amount)}g",
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.Medium,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
                     }
                 }
             }
-        }
-    }
-}
-
-@Composable
-fun HealthStatusBadge(
-    label: String,
-    count: Int,
-    color: Color
-) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Box(
-            modifier = Modifier
-                .size(12.dp)
-                .clip(CircleShape)
-                .background(color)
-        )
-        Spacer(modifier = Modifier.height(6.dp))
-        Text(
-            text = label,
-            style = MaterialTheme.typography.bodySmall,
-            color = TextSecondary,
-            fontSize = 12.sp
-        )
-        Text(
-            text = "${count}일",
-            style = MaterialTheme.typography.bodySmall,
-            fontWeight = FontWeight.SemiBold,
-            color = TextPrimary,
-            fontSize = 12.sp
-        )
         }
     }
 }
