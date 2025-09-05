@@ -11,11 +11,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.health.connect.client.permission.HealthPermission
+import androidx.health.connect.client.records.HeartRateRecord
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.health.connect.client.PermissionController
 import com.hackathon.alcolook.data.HeartRateData
-import com.hackathon.alcolook.data.IntoxicationLevel
-import com.hackathon.alcolook.service.TestSensorDataGenerator
-import kotlinx.coroutines.delay
+import com.hackathon.alcolook.HealthConnectManager
 import kotlinx.coroutines.launch
+import java.time.LocalDateTime
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -26,10 +29,27 @@ fun HeartRateScreen(
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    val healthConnectManager = remember { HealthConnectManager(context) }
     
     var heartRateData by remember { mutableStateOf<HeartRateData?>(null) }
     var isLoading by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+    var hasPermission by remember { mutableStateOf(false) }
+    
+    // 헬스 커넥트 권한 요청
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = PermissionController.createRequestPermissionResultContract()
+    ) { granted ->
+        hasPermission = granted.containsAll(healthConnectManager.permissions)
+        if (!hasPermission) {
+            errorMessage = "헬스 커넥트 권한이 필요합니다"
+        }
+    }
+    
+    // 권한 확인
+    LaunchedEffect(Unit) {
+        hasPermission = healthConnectManager.hasAllPermissions()
+    }
     
     Column(
         modifier = Modifier
@@ -103,7 +123,7 @@ fun HeartRateScreen(
                         CircularProgressIndicator()
                         Spacer(modifier = Modifier.height(16.dp))
                         Text(
-                            text = "스마트워치에서 심박수 데이터를 가져오는 중...",
+                            text = "헬스 커넥트에서 심박수 데이터를 가져오는 중...",
                             fontSize = 14.sp,
                             textAlign = TextAlign.Center
                         )
@@ -221,49 +241,52 @@ fun HeartRateScreen(
                 Text("뒤로가기")
             }
             
-            // 워치가 없으신가요? 버튼
+            // 건너뛰기 버튼
             OutlinedButton(
                 onClick = { 
                     onNextClick(null) // null로 전달하여 심박수 데이터 없음을 표시
                 },
                 modifier = Modifier.weight(1f)
             ) {
-                Text("워치가 없으신가요?")
+                Text("건너뛰기")
             }
             
             // 심박수 측정하기 버튼
             Button(
                 onClick = {
-                    isLoading = true
-                    errorMessage = null
-                    scope.launch {
-                        try {
-                            // 실제로는 헬스 커넥트 API 호출
-                            // 현재는 테스트 데이터 생성
-                            delay(2000) // 측정 시뮬레이션
-                            
-                            // 얼굴 분석 결과에 따른 적절한 심박수 데이터 생성
-                            val intoxicationLevel = when {
-                                faceAnalysisResult == null -> IntoxicationLevel.NORMAL
-                                faceAnalysisResult < 20 -> IntoxicationLevel.NORMAL
-                                faceAnalysisResult < 40 -> IntoxicationLevel.SLIGHTLY
-                                faceAnalysisResult < 60 -> IntoxicationLevel.MODERATE
-                                else -> IntoxicationLevel.HEAVY
+                    if (!hasPermission) {
+                        // 권한 요청
+                        permissionLauncher.launch(healthConnectManager.permissions)
+                    } else {
+                        // 실제 헬스 커넥트에서 데이터 가져오기
+                        isLoading = true
+                        errorMessage = null
+                        scope.launch {
+                            try {
+                                val recentHeartRate = healthConnectManager.getRecentHeartRate()
+                                if (recentHeartRate != null) {
+                                    // 실제 데이터를 HeartRateData 형식으로 변환
+                                    heartRateData = HeartRateData(
+                                        bpm = recentHeartRate.bpm.toInt(),
+                                        variability = 0.1f, // 기본값
+                                        measurementDuration = 30,
+                                        timestamp = LocalDateTime.now()
+                                    )
+                                } else {
+                                    errorMessage = "최근 심박수 데이터를 찾을 수 없습니다.\n스마트워치에서 심박수를 측정해주세요."
+                                }
+                            } catch (e: Exception) {
+                                errorMessage = "심박수 데이터를 가져오는데 실패했습니다.\n${e.message}"
+                            } finally {
+                                isLoading = false
                             }
-                            
-                            val testData = TestSensorDataGenerator.generateTestData(intoxicationLevel)
-                            heartRateData = testData.heartRate
-                        } catch (e: Exception) {
-                            errorMessage = "심박수 측정에 실패했습니다. 스마트워치 연결을 확인해주세요."
-                        } finally {
-                            isLoading = false
                         }
                     }
                 },
                 enabled = !isLoading,
                 modifier = Modifier.weight(1f)
             ) {
-                Text("심박수 측정하기")
+                Text(if (hasPermission) "심박수 측정하기" else "권한 허용")
             }
         }
         

@@ -69,11 +69,20 @@ dependencies {
     implementation("androidx.camera:camera-lifecycle:1.3.4")
     implementation("androidx.camera:camera-view:1.3.4")
     
+    // Guava for CameraX ListenableFuture
+    implementation("com.google.guava:guava:31.1-android")
+    
     // Permissions
     implementation("com.google.accompanist:accompanist-permissions:0.32.0")
     
     // Image loading
     implementation("io.coil-kt:coil-compose:2.5.0")
+    
+    // Health Connect
+    implementation("androidx.health.connect:connect-client:1.1.0-alpha07")
+    
+    // Health Connect
+    implementation("androidx.health.connect:connect-client:1.1.0-alpha07")
    
     implementation(libs.androidx.navigation.compose)
     
