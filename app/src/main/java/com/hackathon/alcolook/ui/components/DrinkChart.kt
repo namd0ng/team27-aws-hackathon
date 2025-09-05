@@ -111,5 +111,5 @@ data class ChartData(
     val label: String,
     val value: Float,
     val color: Color,
-    val status: DrinkingStatus = DrinkingStatus.NORMAL
+    val status: DrinkingStatus = DrinkingStatus.APPROPRIATE
 )

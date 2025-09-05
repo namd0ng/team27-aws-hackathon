@@ -60,10 +60,35 @@ class SimpleCalendarViewModel : ViewModel() {
         calculateMonthlyStats(monthlyRecords)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(), MonthlyStats())
     
-    // 건강 상태
-    val healthStatus = weeklyStats.map { stats ->
-        evaluateHealthStatus(stats.totalStandardDrinks, userProfile)
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(), DrinkingStatus.NORMAL)
+    // 날짜별 상태 맵
+    val dailyStatusMap = records.map { recordList ->
+        val statusMap = mutableMapOf<LocalDate, DrinkingStatus>()
+        val isMale = userProfile.sex == Gender.MALE
+        
+        // 월간 과음 횟수 계산
+        val currentMonth = LocalDate.now().withDayOfMonth(1)
+        val monthlyExcessiveDays = recordList.filter { record ->
+            record.date >= currentMonth && record.date < currentMonth.plusMonths(1)
+        }.groupBy { it.date }.count { (_, dayRecords) ->
+            val dailyAlcohol = dayRecords.sumOf { it.getPureAlcoholGrams().toDouble() }.toFloat()
+            dailyAlcohol > if (isMale) 70f else 56f
+        }
+        
+        // 각 날짜별 상태 계산
+        recordList.groupBy { it.date }.forEach { (date, dayRecords) ->
+            val dailyAlcohol = dayRecords.sumOf { it.getPureAlcoholGrams().toDouble() }.toFloat()
+            val dailyStatus = evaluateDailyStatus(dailyAlcohol, isMale)
+            val monthlyStatus = evaluateMonthlyStatus(monthlyExcessiveDays)
+            statusMap[date] = evaluateOverallHealthStatus(dailyStatus, monthlyStatus)
+        }
+        
+        statusMap
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(), emptyMap())
+    
+    // 건강 상태 (오늘 기준)
+    val healthStatus = dailyStatusMap.map { statusMap ->
+        statusMap[LocalDate.now()] ?: DrinkingStatus.APPROPRIATE
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(), DrinkingStatus.APPROPRIATE)
     
     // 주간 차트 데이터 (최근 7일)
     val weeklyChartData = records.map { recordList ->
@@ -73,6 +98,24 @@ class SimpleCalendarViewModel : ViewModel() {
     // 월간 차트 데이터 (최근 4주)
     val monthlyChartData = records.map { recordList ->
         generateMonthlyChartData(recordList)
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(), emptyList())
+    
+    // 술 종류별 통계
+    val drinkTypeStats = records.map { recordList ->
+        val today = LocalDate.now()
+        val startOfWeek = today.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
+        val endOfWeek = today.with(TemporalAdjusters.nextOrSame(DayOfWeek.SUNDAY))
+        
+        val weeklyRecords = recordList.filter { record ->
+            !record.date.isBefore(startOfWeek) && !record.date.isAfter(endOfWeek)
+        }
+        
+        weeklyRecords.groupBy { it.type }
+            .mapValues { (_, records) -> 
+                records.sumOf { it.getPureAlcoholGrams().toDouble() }.toFloat()
+            }
+            .toList()
+            .sortedByDescending { it.second }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(), emptyList())
 
     fun selectDate(date: LocalDate) {
@@ -112,6 +155,35 @@ class SimpleCalendarViewModel : ViewModel() {
         _records.value = _records.value + newRecord
     }
     
+    fun updateDrinkRecord(
+        recordId: Long,
+        type: DrinkType,
+        unit: DrinkUnit,
+        quantity: Int,
+        customAbv: Float? = null,
+        note: String? = null
+    ) {
+        val volumePerUnit = unit.getVolumeMl(type)
+        val totalVolume = volumePerUnit * quantity
+        
+        _records.value = _records.value.map { record ->
+            if (record.id == recordId) {
+                record.copy(
+                    type = type,
+                    unit = unit,
+                    quantity = quantity,
+                    totalVolumeMl = totalVolume,
+                    abv = customAbv,
+                    note = note
+                )
+            } else record
+        }
+    }
+    
+    fun deleteDrinkRecord(recordId: Long) {
+        _records.value = _records.value.filter { it.id != recordId }
+    }
+    
     private fun calculateWeeklyStats(records: List<DrinkRecord>): WeeklyStats {
         if (records.isEmpty()) return WeeklyStats()
         
@@ -141,7 +213,7 @@ class SimpleCalendarViewModel : ViewModel() {
         val totalVolumeMl = records.sumOf { it.totalVolumeMl }
         val drinkingDays = records.map { it.date }.distinct().size
         val daysInMonth = LocalDate.now().lengthOfMonth()
-        val averagePerDay = if (daysInMonth > 0) totalStandardDrinks / daysInMonth else 0f
+        val averagePerDay = totalStandardDrinks / daysInMonth // 전체 월 일수로 나누기
         
         return MonthlyStats(
             totalStandardDrinks = totalStandardDrinks,
@@ -151,38 +223,72 @@ class SimpleCalendarViewModel : ViewModel() {
         )
     }
     
-    private fun evaluateHealthStatus(weeklyStandardDrinks: Float, profile: UserProfile): DrinkingStatus {
-        val weeklyLimit = when {
-            profile.isSenior65 -> 7f // 65세 이상: 주 7잔
-            profile.sex == Gender.MALE -> 14f // 남성: 주 14잔
-            profile.sex == Gender.FEMALE -> 7f // 여성: 주 7잔
-            else -> 14f // 기본값
-        }
-        
+    // 일일 알코올 섭취량 평가
+    private fun evaluateDailyStatus(dailyAlcoholGrams: Float, isMale: Boolean): DrinkingStatus {
         return when {
-            weeklyStandardDrinks <= weeklyLimit * 0.7f -> DrinkingStatus.NORMAL // 70% 이하: 양호
-            weeklyStandardDrinks <= weeklyLimit -> DrinkingStatus.WARNING // 70~100%: 주의
-            else -> DrinkingStatus.DANGER // 100% 초과: 위험
+            dailyAlcoholGrams <= if (isMale) 28f else 14f -> DrinkingStatus.APPROPRIATE
+            dailyAlcoholGrams <= if (isMale) 56f else 42f -> DrinkingStatus.CAUTION  
+            dailyAlcoholGrams <= if (isMale) 70f else 56f -> DrinkingStatus.EXCESSIVE
+            else -> DrinkingStatus.EXCESSIVE // 일일 기준으로는 최대 EXCESSIVE
+        }
+    }
+    
+    // 월간 과음 횟수 기준 평가
+    private fun evaluateMonthlyStatus(monthlyExcessiveDays: Int): DrinkingStatus {
+        return if (monthlyExcessiveDays >= 5) DrinkingStatus.DANGEROUS else DrinkingStatus.APPROPRIATE
+    }
+    
+    // 전체 건강 상태 평가 (가장 높은 위험도 반환)
+    private fun evaluateOverallHealthStatus(dailyStatus: DrinkingStatus, monthlyStatus: DrinkingStatus): DrinkingStatus {
+        return when {
+            dailyStatus == DrinkingStatus.DANGEROUS || monthlyStatus == DrinkingStatus.DANGEROUS -> DrinkingStatus.DANGEROUS
+            dailyStatus == DrinkingStatus.EXCESSIVE -> DrinkingStatus.EXCESSIVE
+            dailyStatus == DrinkingStatus.CAUTION -> DrinkingStatus.CAUTION
+            else -> DrinkingStatus.APPROPRIATE
         }
     }
     
     fun getCharacterComment(status: DrinkingStatus): String {
-        return when (status) {
-            DrinkingStatus.NORMAL -> "🐕 멍멍! 적당한 음주 패턴이에요. 건강한 음주 습관을 유지하고 계시네요! 👏"
-            DrinkingStatus.WARNING -> "🐕 멍멍! 조금 많이 마신 것 같아요. 오늘은 술 그만 마시는 게 어떨까요? 🤔"
-            DrinkingStatus.DANGER -> "🐕 멍멍! 위험한 수준이에요. 건강을 위해 의사와 상담해보시는 걸 추천해요! ⚠️"
+        val comments = when (status) {
+            DrinkingStatus.APPROPRIATE -> listOf(
+                "오늘은 딱 알맞게 즐기셨네요! 균형 잡힌 음주, 멋져요!",
+                "좋습니다 내일도 상쾌하게 일어날 수 있겠네요.",
+                "이 정도면 건강에 큰 무리 없어요. 현명한 선택이네요!",
+                "오늘은 깔끔하게 딱 적정량만! 자기 관리 잘하시네요"
+            )
+            DrinkingStatus.CAUTION -> listOf(
+                "조금은 과했네요 내일은 물 많이 드시고 쉬어주세요.",
+                "이 정도면 괜찮지만, 매일 반복되면 몸이 힘들 수 있어요.",
+                "슬슬 간이 피곤해질지도… 내일은 가볍게 보내는 게 어떨까요?",
+                "컨디션 체크하면서 마시는 것도 중요해요"
+            )
+            DrinkingStatus.EXCESSIVE -> listOf(
+                "이건 위험한 수준이에요 속도를 줄이셔야 합니다.",
+                "오늘은 좀 과격했네요… 간이 놀랐을 거예요",
+                "이러다 내일 숙취와 함께 고통받을 수도 있어요",
+                "가끔은 괜찮지만, 자주 반복되면 건강에 큰 부담이 돼요."
+            )
+            DrinkingStatus.DANGEROUS -> listOf(
+                "심각한 음주 패턴이 보입니다 전문가 상담을 고려하세요.",
+                "몸이 보내는 신호를 무시하지 마세요. 위험해요.",
+                "이 정도면 간이 SOS를 보내고 있을 거예요",
+                "한 번쯤 음주 습관을 점검해보는 게 어떨까요?",
+                "과음은 삶의 질을 떨어뜨립니다. 지금이 바꿀 때예요."
+            )
         }
+        return "🐕 " + comments.random()
     }
     
     private fun generateWeeklyChartData(records: List<DrinkRecord>): List<ChartData> {
         val today = LocalDate.now()
         val chartData = mutableListOf<ChartData>()
+        val isMale = userProfile.sex == Gender.MALE
         
         // 최근 7일 (월~일)
         for (i in 6 downTo 0) {
             val date = today.minusDays(i.toLong())
             val dayRecords = records.filter { it.date == date }
-            val totalStandardDrinks = dayRecords.sumOf { it.getStandardDrinks().toDouble() }.toFloat()
+            val totalAlcohol = dayRecords.sumOf { it.getPureAlcoholGrams().toDouble() }.toFloat()
             
             val dayOfWeek = when (date.dayOfWeek.value) {
                 1 -> "월"
@@ -195,17 +301,18 @@ class SimpleCalendarViewModel : ViewModel() {
                 else -> ""
             }
             
-            val status = evaluateDailyStatus(totalStandardDrinks)
+            val status = evaluateDailyStatus(totalAlcohol, isMale)
             val color = when (status) {
-                DrinkingStatus.NORMAL -> StatusNormal
-                DrinkingStatus.WARNING -> StatusWarning
-                DrinkingStatus.DANGER -> StatusDanger
+                DrinkingStatus.APPROPRIATE -> androidx.compose.ui.graphics.Color.Green
+                DrinkingStatus.CAUTION -> androidx.compose.ui.graphics.Color(0xFFFF9800)
+                DrinkingStatus.EXCESSIVE -> androidx.compose.ui.graphics.Color.Red
+                DrinkingStatus.DANGEROUS -> androidx.compose.ui.graphics.Color.Black
             }
             
             chartData.add(
                 ChartData(
                     label = dayOfWeek,
-                    value = totalStandardDrinks,
+                    value = totalAlcohol, // 순수 알코올량(g)으로 변경
                     color = color,
                     status = status
                 )
@@ -218,6 +325,7 @@ class SimpleCalendarViewModel : ViewModel() {
     private fun generateMonthlyChartData(records: List<DrinkRecord>): List<ChartData> {
         val today = LocalDate.now()
         val chartData = mutableListOf<ChartData>()
+        val isMale = userProfile.sex == Gender.MALE
         
         // 최근 4주
         for (week in 3 downTo 0) {
@@ -228,19 +336,21 @@ class SimpleCalendarViewModel : ViewModel() {
                 !record.date.isBefore(weekStart) && !record.date.isAfter(weekEnd)
             }
             
-            val totalStandardDrinks = weekRecords.sumOf { it.getStandardDrinks().toDouble() }.toFloat()
+            val totalAlcohol = weekRecords.sumOf { it.getPureAlcoholGrams().toDouble() }.toFloat()
+            val weeklyAverage = totalAlcohol / 7f // 주간 평균
             
-            val status = evaluateHealthStatus(totalStandardDrinks, userProfile)
+            val status = evaluateDailyStatus(weeklyAverage, isMale)
             val color = when (status) {
-                DrinkingStatus.NORMAL -> StatusNormal
-                DrinkingStatus.WARNING -> StatusWarning
-                DrinkingStatus.DANGER -> StatusDanger
+                DrinkingStatus.APPROPRIATE -> androidx.compose.ui.graphics.Color.Green
+                DrinkingStatus.CAUTION -> androidx.compose.ui.graphics.Color(0xFFFF9800)
+                DrinkingStatus.EXCESSIVE -> androidx.compose.ui.graphics.Color.Red
+                DrinkingStatus.DANGEROUS -> androidx.compose.ui.graphics.Color.Black
             }
             
             chartData.add(
                 ChartData(
-                    label = "${4-week}주전",
-                    value = totalStandardDrinks,
+                    label = if (week == 0) "이번주" else "${week}주전",
+                    value = totalAlcohol,
                     color = color,
                     status = status
                 )
@@ -259,9 +369,9 @@ class SimpleCalendarViewModel : ViewModel() {
         }
         
         return when {
-            dailyStandardDrinks <= dailyLimit -> DrinkingStatus.NORMAL
-            dailyStandardDrinks <= dailyLimit * 2 -> DrinkingStatus.WARNING
-            else -> DrinkingStatus.DANGER
+            dailyStandardDrinks <= dailyLimit -> DrinkingStatus.APPROPRIATE
+            dailyStandardDrinks <= dailyLimit * 2 -> DrinkingStatus.CAUTION
+            else -> DrinkingStatus.EXCESSIVE
         }
     }
 }

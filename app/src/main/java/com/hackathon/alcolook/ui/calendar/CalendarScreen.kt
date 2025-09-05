@@ -32,14 +32,13 @@ fun CalendarDayCell(
     day: Int,
     isToday: Boolean = false,
     isSelected: Boolean = false,
-    status: DrinkingStatus = DrinkingStatus.NORMAL,
+    status: DrinkingStatus = DrinkingStatus.APPROPRIATE,
+    hasRecord: Boolean = false,
     onClick: () -> Unit = {}
 ) {
     val backgroundColor = when {
         isToday -> CalendarToday
         isSelected -> CalendarSelected
-        status == DrinkingStatus.WARNING -> WarningSoft
-        status == DrinkingStatus.DANGER -> DangerSoft
         else -> Color.Transparent
     }
     
@@ -62,6 +61,25 @@ fun CalendarDayCell(
             color = textColor,
             fontWeight = if (isToday || isSelected) FontWeight.SemiBold else FontWeight.Normal
         )
+        
+        // 기록이 있는 날만 상태별 색상 점 표시
+        if (hasRecord) {
+            Box(
+                modifier = Modifier
+                    .size(6.dp)
+                    .clip(CircleShape)
+                    .background(
+                        when (status) {
+                            DrinkingStatus.APPROPRIATE -> androidx.compose.ui.graphics.Color.Green
+                            DrinkingStatus.CAUTION -> androidx.compose.ui.graphics.Color(0xFFFF9800)
+                            DrinkingStatus.EXCESSIVE -> androidx.compose.ui.graphics.Color.Red
+                            DrinkingStatus.DANGEROUS -> androidx.compose.ui.graphics.Color.Black
+                        }
+                    )
+                    .align(Alignment.BottomCenter)
+                    .offset(y = (-2).dp)
+            )
+        }
     }
 }
 
@@ -73,6 +91,8 @@ fun CalendarScreen(
     val selectedTab by viewModel.selectedTab.collectAsStateWithLifecycle()
     val tabs = listOf("📅 월별", "📊 통계")
     var showAddDialog by remember { mutableStateOf(false) }
+    var showEditDialog by remember { mutableStateOf(false) }
+    var editingRecord by remember { mutableStateOf<com.hackathon.alcolook.data.model.DrinkRecord?>(null) }
     
     Column(
         modifier = Modifier
@@ -197,6 +217,30 @@ fun CalendarScreen(
                 }
             )
         }
+        
+
+        
+        if (showEditDialog && editingRecord != null) {
+            com.hackathon.alcolook.ui.components.EditRecordDialog(
+                record = editingRecord!!,
+                onDismiss = { 
+                    showEditDialog = false
+                    editingRecord = null
+                },
+                onConfirm = { type: DrinkType, unit: DrinkUnit, quantity: Int, abv: Float?, note: String? ->
+                    viewModel.updateDrinkRecord(
+                        recordId = editingRecord!!.id,
+                        type = type,
+                        unit = unit,
+                        quantity = quantity,
+                        customAbv = abv,
+                        note = note
+                    )
+                    showEditDialog = false
+                    editingRecord = null
+                }
+            )
+        }
     }
 }
 
@@ -207,6 +251,9 @@ private fun MonthlyCalendarContent(
 ) {
     val selectedDate by viewModel.selectedDate.collectAsStateWithLifecycle()
     val records by viewModel.records.collectAsStateWithLifecycle()
+    val dailyStatusMap by viewModel.dailyStatusMap.collectAsStateWithLifecycle()
+    val selectedDateRecords = records.filter { it.date == selectedDate }
+    var showDetailDialog by remember { mutableStateOf(false) }
     val today = LocalDate.now()
     val currentMonth = java.time.YearMonth.now()
     
@@ -333,7 +380,8 @@ private fun MonthlyCalendarContent(
                                         day = dayNumber,
                                         isToday = isToday,
                                         isSelected = isSelected,
-                                        status = if (hasRecord) DrinkingStatus.WARNING else DrinkingStatus.NORMAL,
+                                        status = dailyStatusMap[date] ?: DrinkingStatus.APPROPRIATE,
+                                        hasRecord = hasRecord,
                                         onClick = { viewModel.selectDate(date) }
                                     )
                                 }
@@ -370,7 +418,11 @@ private fun MonthlyCalendarContent(
                     )
                     
                     OutlinedButton(
-                        onClick = { /* TODO: Show summary */ },
+                        onClick = { 
+                            if (selectedDateRecords.isNotEmpty()) {
+                                showDetailDialog = true 
+                            }
+                        },
                         colors = ButtonDefaults.outlinedButtonColors(
                             contentColor = TabSelected
                         ),
@@ -387,6 +439,45 @@ private fun MonthlyCalendarContent(
                 Spacer(modifier = Modifier.height(16.dp))
                 
                 val selectedDateRecords = records.filter { it.date == selectedDate }
+                val selectedDateStatus = dailyStatusMap[selectedDate] ?: DrinkingStatus.APPROPRIATE
+                val totalAlcohol = selectedDateRecords.sumOf { it.getPureAlcoholGrams().toDouble() }.toFloat()
+                val totalStandardDrinks = selectedDateRecords.sumOf { it.getStandardDrinks().toDouble() }.toFloat()
+                
+                // 요약 정보 표시
+                if (selectedDateRecords.isNotEmpty()) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = "총 음주량: ${String.format("%.1f", totalAlcohol)}g",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = TextSecondary
+                        )
+                        Text(
+                            text = "표준잔수: ${String.format("%.1f", totalStandardDrinks)}잔",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = TextSecondary
+                        )
+                        Text(
+                            text = when(selectedDateStatus) {
+                                DrinkingStatus.APPROPRIATE -> "적정"
+                                DrinkingStatus.CAUTION -> "주의"
+                                DrinkingStatus.EXCESSIVE -> "과음"
+                                DrinkingStatus.DANGEROUS -> "위험"
+                            },
+                            style = MaterialTheme.typography.bodySmall,
+                            fontWeight = FontWeight.SemiBold,
+                            color = when(selectedDateStatus) {
+                                DrinkingStatus.APPROPRIATE -> androidx.compose.ui.graphics.Color.Green
+                                DrinkingStatus.CAUTION -> androidx.compose.ui.graphics.Color(0xFFFF9800)
+                                DrinkingStatus.EXCESSIVE -> androidx.compose.ui.graphics.Color.Red
+                                DrinkingStatus.DANGEROUS -> androidx.compose.ui.graphics.Color.Black
+                            }
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(12.dp))
+                }
                 if (selectedDateRecords.isEmpty()) {
                     Column(
                         modifier = Modifier.fillMaxWidth(),
@@ -448,6 +539,28 @@ private fun MonthlyCalendarContent(
                 }
             }
         }
+        
+        if (showDetailDialog) {
+            val dailyStatusMap by viewModel.dailyStatusMap.collectAsStateWithLifecycle()
+            val selectedDateStatus = dailyStatusMap[selectedDate] ?: DrinkingStatus.APPROPRIATE
+            val totalAlcohol = selectedDateRecords.sumOf { it.getPureAlcoholGrams().toDouble() }.toFloat()
+            val totalStandardDrinks = selectedDateRecords.sumOf { it.getStandardDrinks().toDouble() }.toFloat()
+            
+            com.hackathon.alcolook.ui.components.RecordDetailDialog(
+                records = selectedDateRecords,
+                selectedDate = selectedDate,
+                dailyStatus = selectedDateStatus,
+                totalAlcohol = totalAlcohol,
+                totalStandardDrinks = totalStandardDrinks,
+                onDismiss = { showDetailDialog = false },
+                onEditRecord = { record ->
+                    // TODO: 편집 기능 구현
+                },
+                onDeleteRecord = { record ->
+                    viewModel.deleteDrinkRecord(record.id)
+                }
+            )
+        }
     }
 }
 
@@ -461,6 +574,7 @@ private fun StatisticsContent(
     val healthStatus by viewModel.healthStatus.collectAsStateWithLifecycle()
     val weeklyChartData by viewModel.weeklyChartData.collectAsStateWithLifecycle()
     val monthlyChartData by viewModel.monthlyChartData.collectAsStateWithLifecycle()
+    val drinkTypeStats by viewModel.drinkTypeStats.collectAsStateWithLifecycle()
     val periods = listOf("주간 요약", "월간 요약")
     
     val currentStats = if (selectedPeriod == 0) weeklyStats else monthlyStats
@@ -591,16 +705,18 @@ private fun StatisticsContent(
                     )
                     Text(
                         text = when(healthStatus) {
-                            DrinkingStatus.NORMAL -> "양호"
-                            DrinkingStatus.WARNING -> "주의"
-                            DrinkingStatus.DANGER -> "위험"
+                            DrinkingStatus.APPROPRIATE -> "적정"
+                            DrinkingStatus.CAUTION -> "주의"
+                            DrinkingStatus.EXCESSIVE -> "과음"
+                            DrinkingStatus.DANGEROUS -> "위험"
                         },
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.SemiBold,
                         color = when(healthStatus) {
-                            DrinkingStatus.NORMAL -> StatusNormal
-                            DrinkingStatus.WARNING -> StatusWarning
-                            DrinkingStatus.DANGER -> StatusDanger
+                            DrinkingStatus.APPROPRIATE -> androidx.compose.ui.graphics.Color.Green
+                            DrinkingStatus.CAUTION -> androidx.compose.ui.graphics.Color(0xFFFF9800)
+                            DrinkingStatus.EXCESSIVE -> androidx.compose.ui.graphics.Color.Red
+                            DrinkingStatus.DANGEROUS -> androidx.compose.ui.graphics.Color.Black
                         }
                     )
                 }
@@ -615,9 +731,10 @@ private fun StatisticsContent(
                     },
                     modifier = Modifier.fillMaxWidth(),
                     color = when(healthStatus) {
-                        DrinkingStatus.NORMAL -> StatusNormal
-                        DrinkingStatus.WARNING -> StatusWarning
-                        DrinkingStatus.DANGER -> StatusDanger
+                        DrinkingStatus.APPROPRIATE -> androidx.compose.ui.graphics.Color.Green
+                        DrinkingStatus.CAUTION -> androidx.compose.ui.graphics.Color(0xFFFF9800)
+                        DrinkingStatus.EXCESSIVE -> androidx.compose.ui.graphics.Color.Red
+                        DrinkingStatus.DANGEROUS -> androidx.compose.ui.graphics.Color.Black
                     },
                     trackColor = AppBackground
                 )
@@ -764,6 +881,69 @@ private fun StatisticsContent(
                         style = MaterialTheme.typography.bodySmall,
                         color = TextSecondary
                     )
+                }
+            }
+        }
+        
+        Spacer(modifier = Modifier.height(16.dp))
+        
+        // 술 종류별 통계
+        if (hasData && drinkTypeStats.isNotEmpty()) {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = CardBackground),
+                elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp)
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "🍻",
+                            fontSize = 16.sp
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "술 종류별 통계",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            color = TextPrimary
+                        )
+                    }
+                    
+                    Spacer(modifier = Modifier.height(16.dp))
+                    
+                    drinkTypeStats.take(5).forEach { (type, amount) ->
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = type.getEmoji(),
+                                    fontSize = 16.sp
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = type.getDisplayName(),
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                            }
+                            Text(
+                                text = "${String.format("%.1f", amount)}g",
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.Medium,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
+                    }
                 }
             }
         }

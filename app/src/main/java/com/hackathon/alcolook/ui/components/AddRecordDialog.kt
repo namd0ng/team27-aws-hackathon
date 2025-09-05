@@ -12,10 +12,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.hackathon.alcolook.data.model.DrinkType
 import com.hackathon.alcolook.data.model.DrinkUnit
+import com.hackathon.alcolook.data.model.DrinkingStatus
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -23,6 +26,9 @@ fun AddRecordDialog(
     onDismiss: () -> Unit,
     onConfirm: (DrinkType, DrinkUnit, Int, Float?, String?, String?) -> Unit
 ) {
+    var showResultDialog by remember { mutableStateOf(false) }
+    var resultStatus by remember { mutableStateOf(DrinkingStatus.APPROPRIATE) }
+    var resultMessage by remember { mutableStateOf("") }
     var selectedType by remember { mutableStateOf(DrinkType.BEER) }
     var selectedUnit by remember { mutableStateOf(DrinkUnit.BOTTLE) }
     var quantity by remember { mutableStateOf("1") }
@@ -249,11 +255,122 @@ fun AddRecordDialog(
                                 val abv = customAbv.toFloatOrNull()
                                 val drinkName = if (selectedType == DrinkType.OTHER && customDrinkName.isNotBlank()) customDrinkName else null
                                 val memo = if (note.isNotBlank()) note else null
-                                onConfirm(selectedType, selectedUnit, qty, abv, drinkName, memo)
+                                
+                                // 상태 평가
+                                val pureAlcohol = totalVolume * (customAbv.toFloatOrNull() ?: selectedType.getDefaultAbv()) * 0.789f / 100f
+                                val isMale = true // TODO: 사용자 성별 가져오기
+                                
+                                resultStatus = when {
+                                    pureAlcohol <= if (isMale) 28f else 14f -> DrinkingStatus.APPROPRIATE
+                                    pureAlcohol <= if (isMale) 56f else 42f -> DrinkingStatus.CAUTION
+                                    pureAlcohol <= if (isMale) 70f else 56f -> DrinkingStatus.EXCESSIVE
+                                    else -> DrinkingStatus.EXCESSIVE
+                                }
+                                
+                                // 랜덤 메시지 선택
+                                val messages = when (resultStatus) {
+                                    DrinkingStatus.APPROPRIATE -> listOf(
+                                        "오늘은 딱 알맞게 즐기셨네요! 균형 잡힌 음주, 멋져요!",
+                                        "좋습니다 내일도 상쾌하게 일어날 수 있겠네요.",
+                                        "이 정도면 건강에 큰 무리 없어요. 현명한 선택이네요!",
+                                        "오늘은 깔끔하게 딱 적정량만! 자기 관리 잘하시네요"
+                                    )
+                                    DrinkingStatus.CAUTION -> listOf(
+                                        "조금은 과했네요 내일은 물 많이 드시고 쉬어주세요.",
+                                        "이 정도면 괜찮지만, 매일 반복되면 몸이 힘들 수 있어요.",
+                                        "슬슬 간이 피곤해질지도… 내일은 가볍게 보내는 게 어떨까요?",
+                                        "컨디션 체크하면서 마시는 것도 중요해요"
+                                    )
+                                    DrinkingStatus.EXCESSIVE -> listOf(
+                                        "이건 위험한 수준이에요 속도를 줄이셔야 합니다.",
+                                        "오늘은 좀 과격했네요… 간이 놀랐을 거예요",
+                                        "이러다 내일 숙취와 함께 고통받을 수도 있어요",
+                                        "가끔은 괜찮지만, 자주 반복되면 건강에 큰 부담이 돼요."
+                                    )
+                                    DrinkingStatus.DANGEROUS -> listOf(
+                                        "심각한 음주 패턴이 보입니다 전문가 상담을 고려하세요."
+                                    )
+                                }
+                                resultMessage = messages.random()
+                                
+                                showResultDialog = true
                             },
                             modifier = Modifier.weight(1f)
                         ) {
                             Text("추가")
+                        }
+                    }
+                }
+            }
+        }
+        
+        // 결과 다이얼로그
+        if (showResultDialog) {
+            Dialog(onDismissRequest = { }) {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = when(resultStatus) {
+                            DrinkingStatus.APPROPRIATE -> androidx.compose.ui.graphics.Color.Green.copy(alpha = 0.1f)
+                            DrinkingStatus.CAUTION -> androidx.compose.ui.graphics.Color.Yellow.copy(alpha = 0.1f)
+                            DrinkingStatus.EXCESSIVE -> androidx.compose.ui.graphics.Color.Red.copy(alpha = 0.1f)
+                            DrinkingStatus.DANGEROUS -> androidx.compose.ui.graphics.Color.Black.copy(alpha = 0.1f)
+                        }
+                    )
+                ) {
+                    Column(
+                        modifier = Modifier.padding(24.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = "🐕",
+                            fontSize = 48.sp
+                        )
+                        
+                        Spacer(modifier = Modifier.height(16.dp))
+                        
+                        Text(
+                            text = when(resultStatus) {
+                                DrinkingStatus.APPROPRIATE -> "적정"
+                                DrinkingStatus.CAUTION -> "주의"
+                                DrinkingStatus.EXCESSIVE -> "과음"
+                                DrinkingStatus.DANGEROUS -> "위험"
+                            },
+                            style = MaterialTheme.typography.headlineSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = when(resultStatus) {
+                                DrinkingStatus.APPROPRIATE -> androidx.compose.ui.graphics.Color.Green
+                                DrinkingStatus.CAUTION -> androidx.compose.ui.graphics.Color(0xFFFF9800)
+                                DrinkingStatus.EXCESSIVE -> androidx.compose.ui.graphics.Color.Red
+                                DrinkingStatus.DANGEROUS -> androidx.compose.ui.graphics.Color.Black
+                            }
+                        )
+                        
+                        Spacer(modifier = Modifier.height(12.dp))
+                        
+                        Text(
+                            text = resultMessage,
+                            style = MaterialTheme.typography.bodyMedium,
+                            textAlign = TextAlign.Center
+                        )
+                        
+                        Spacer(modifier = Modifier.height(20.dp))
+                        
+                        Button(
+                            onClick = {
+                                val qty = quantity.toIntOrNull() ?: 1
+                                val abv = customAbv.toFloatOrNull()
+                                val drinkName = if (selectedType == DrinkType.OTHER && customDrinkName.isNotBlank()) customDrinkName else null
+                                val memo = if (note.isNotBlank()) note else null
+                                onConfirm(selectedType, selectedUnit, qty, abv, drinkName, memo)
+                                showResultDialog = false
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("기록 저장")
                         }
                     }
                 }

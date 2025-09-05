@@ -15,12 +15,12 @@ enum class DrinkType {
     }
 
     fun getDefaultAbv(): Float = when(this) {
-        SOJU -> 16.9f
+        SOJU -> 16f
         BEER -> 4.5f
-        WINE -> 12f
+        WINE -> 15f
         WHISKY -> 40f
-        HIGHBALL -> 5f
-        COCKTAIL -> 15f
+        HIGHBALL -> 7f
+        COCKTAIL -> 7f
         MAKGEOLLI -> 6f
         OTHER -> 0f
     }
