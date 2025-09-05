@@ -9,7 +9,6 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -18,16 +17,8 @@ import com.hackathon.alcolook.ui.theme.*
 
 /**
  * 설정 화면용 드롭다운 아이템 컴포넌트
- * ListItem 기반으로 구현하여 캘린더 탭과 동일한 스타일 적용
- * 
- * @param emoji 아이템 앞에 표시할 이모지
- * @param title 설정 항목 제목
- * @param options 선택 가능한 옵션 목록
- * @param selectedValue 현재 선택된 값
- * @param onValueChange 값 변경 콜백
- * @param modifier 컴포저블 수정자
+ * 스크린샷과 동일한 디자인으로 구현
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DropdownSettingsItem(
     emoji: String,
@@ -37,66 +28,70 @@ fun DropdownSettingsItem(
     onValueChange: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    // 드롭다운 메뉴 확장 상태 관리
     var expanded by remember { mutableStateOf(false) }
     
-    Box(modifier = modifier) {
-        // ListItem을 사용하여 캘린더 탭과 동일한 스타일 적용
-        ListItem(
-            headlineContent = {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.Medium,
-                    color = TextPrimary
-                )
-            },
-            leadingContent = {
-                // 이모지 아이콘 (Material Icons 대신 플랫폼 이모지 사용)
-                Text(
-                    text = emoji,
-                    fontSize = 20.sp
-                )
-            },
-            trailingContent = {
-                // 선택 버튼 (캘린더 탭 버튼 스타일과 동일)
-                OutlinedButton(
-                    onClick = { expanded = true },
-                    colors = ButtonDefaults.outlinedButtonColors(
-                        contentColor = TabSelected,
-                        containerColor = Color.Transparent
-                    ),
-
-                    shape = RoundedCornerShape(8.dp),
-                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
-                    modifier = Modifier.height(32.dp)
-                ) {
-                    Text(
-                        text = selectedValue,
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Medium
-                    )
-                }
-            },
+    Box(modifier = modifier.fillMaxWidth()) {
+        // 메인 아이템 (스크린샷과 동일한 레이아웃)
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .clickable { expanded = true }
-                .padding(horizontal = 4.dp, vertical = 2.dp),
-            colors = ListItemDefaults.colors(
-                containerColor = Color.Transparent
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // 이모지 아이콘
+            Text(
+                text = emoji,
+                fontSize = 20.sp,
+                modifier = Modifier.size(24.dp)
             )
-        )
+            
+            Spacer(modifier = Modifier.width(12.dp))
+            
+            // 제목
+            Text(
+                text = title,
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.Medium,
+                color = Color.Black,
+                modifier = Modifier.weight(1f)
+            )
+            
+            // 선택된 값 표시 (연한 회색 배경)
+            Surface(
+                color = Color(0xFFE0E0E0),
+                shape = RoundedCornerShape(20.dp),
+                modifier = Modifier.clickable { expanded = true }
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = selectedValue,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Color.Black
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = "▼",
+                        fontSize = 10.sp,
+                        color = Color.Gray
+                    )
+                }
+            }
+        }
         
-        // Material3 DropdownMenu 사용
+        // 드롭다운 메뉴 (버튼 바로 아래 위치)
         DropdownMenu(
             expanded = expanded,
             onDismissRequest = { expanded = false },
             modifier = Modifier
+                .wrapContentSize()
                 .background(
-                    color = CardBackground,
+                    color = Color.White,
                     shape = RoundedCornerShape(8.dp)
                 )
-                .clip(RoundedCornerShape(8.dp))
         ) {
             options.forEach { option ->
                 DropdownMenuItem(
@@ -104,7 +99,7 @@ fun DropdownSettingsItem(
                         Text(
                             text = option,
                             style = MaterialTheme.typography.bodyMedium,
-                            color = TextPrimary,
+                            color = Color.Black,
                             fontWeight = if (option == selectedValue) FontWeight.SemiBold else FontWeight.Normal
                         )
                     },
@@ -112,12 +107,7 @@ fun DropdownSettingsItem(
                         onValueChange(option)
                         expanded = false
                     },
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = MenuDefaults.itemColors(
-                        textColor = TextPrimary,
-                        leadingIconColor = TextPrimary,
-                        trailingIconColor = TextPrimary
-                    )
+                    modifier = Modifier.fillMaxWidth()
                 )
             }
         }
@@ -126,7 +116,6 @@ fun DropdownSettingsItem(
 
 /**
  * 설정 값을 저장하는 상태 홀더
- * rememberSaveable을 사용하여 화면 회전 등에서도 값 유지
  */
 @Composable
 fun rememberSettingsState(

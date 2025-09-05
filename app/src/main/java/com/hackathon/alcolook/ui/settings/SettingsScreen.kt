@@ -68,10 +68,10 @@ fun SettingsScreen() {
 
 @Composable
 private fun PersonalInfoSection() {
-    val genderState = rememberSettingsState("선택")
-    val ageGroupState = rememberSettingsState("선택")
-    val weeklyGoalState = rememberSettingsState("선택")
-    val themeState = rememberSettingsState("선택")
+    val genderState = rememberSettingsState(stringResource(R.string.gender_male))
+    val ageGroupState = rememberSettingsState(stringResource(R.string.age_30s))
+    val weeklyGoalState = rememberSettingsState(stringResource(R.string.goal_recommended))
+    val themeState = rememberSettingsState(stringResource(R.string.theme_system))
     
     Column {
         Text(
@@ -90,11 +90,15 @@ private fun PersonalInfoSection() {
             shape = RoundedCornerShape(16.dp)
         ) {
             Column {
-                SettingsItem(
-                    icon = "👤",
+                DropdownSettingsItem(
+                    emoji = "👤",
                     title = "성별",
-                    value = genderState.value,
-                    onClick = { /* TODO */ }
+                    options = listOf(
+                        stringResource(R.string.gender_male),
+                        stringResource(R.string.gender_female)
+                    ),
+                    selectedValue = genderState.value,
+                    onValueChange = { genderState.value = it }
                 )
                 
                 HorizontalDivider(
@@ -103,11 +107,19 @@ private fun PersonalInfoSection() {
                     modifier = Modifier.padding(horizontal = 16.dp)
                 )
                 
-                SettingsItem(
-                    icon = "🎂",
+                DropdownSettingsItem(
+                    emoji = "🎂",
                     title = "연령대",
-                    value = ageGroupState.value,
-                    onClick = { /* TODO */ }
+                    options = listOf(
+                        stringResource(R.string.age_20s),
+                        stringResource(R.string.age_30s),
+                        stringResource(R.string.age_40s),
+                        stringResource(R.string.age_50s),
+                        stringResource(R.string.age_60_64),
+                        stringResource(R.string.age_65_plus)
+                    ),
+                    selectedValue = ageGroupState.value,
+                    onValueChange = { ageGroupState.value = it }
                 )
                 
                 HorizontalDivider(
@@ -116,11 +128,16 @@ private fun PersonalInfoSection() {
                     modifier = Modifier.padding(horizontal = 16.dp)
                 )
                 
-                SettingsItem(
-                    icon = "🏁",
+                DropdownSettingsItem(
+                    emoji = "🏁",
                     title = "주간 목표",
-                    value = weeklyGoalState.value,
-                    onClick = { /* TODO */ }
+                    options = listOf(
+                        stringResource(R.string.goal_recommended),
+                        stringResource(R.string.goal_low_risk),
+                        stringResource(R.string.goal_maximum)
+                    ),
+                    selectedValue = weeklyGoalState.value,
+                    onValueChange = { weeklyGoalState.value = it }
                 )
                 
                 HorizontalDivider(
@@ -129,11 +146,16 @@ private fun PersonalInfoSection() {
                     modifier = Modifier.padding(horizontal = 16.dp)
                 )
                 
-                SettingsItem(
-                    icon = "🎨",
+                DropdownSettingsItem(
+                    emoji = "🎨",
                     title = "테마 설정",
-                    value = themeState.value,
-                    onClick = { /* TODO */ }
+                    options = listOf(
+                        stringResource(R.string.theme_system),
+                        stringResource(R.string.theme_dark),
+                        stringResource(R.string.theme_light)
+                    ),
+                    selectedValue = themeState.value,
+                    onValueChange = { themeState.value = it }
                 )
             }
         }
