@@ -5,7 +5,7 @@
 ### 기술 스택
 - **Kotlin** + **Jetpack Compose** (Material 3)
 - **Navigation Compose** for 3-tab navigation
-- **Local-only** data storage (no network)
+- **Amazon Rekognition** for face analysis + **DynamoDB** for cloud storage
 - **minSdk 26**, **compileSdk 36**, **targetSdk 36**
 
 ### 아키텍처
@@ -47,6 +47,6 @@ com.hackathon.alcolook/
 ### 다음 단계 (구현 예정)
 - CameraX 통합
 - ML Kit 얼굴 검출
-- Room 데이터베이스
+- DynamoDB 연동
 - Hilt DI
 - 실제 데이터 모델 및 비즈니스 로직
