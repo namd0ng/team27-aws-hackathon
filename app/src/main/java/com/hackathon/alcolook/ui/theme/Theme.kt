@@ -43,7 +43,8 @@ fun AlcoLookTheme(
         SideEffect {
             val window = (view.context as androidx.activity.ComponentActivity).window
             WindowCompat.setDecorFitsSystemWindows(window, false)
-            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = true
+            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = false
+
         }
     }
 

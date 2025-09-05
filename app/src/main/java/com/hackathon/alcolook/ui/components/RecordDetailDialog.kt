@@ -26,7 +26,7 @@ fun RecordDetailDialog(
     totalAlcohol: Float,
     totalStandardDrinks: Float,
     onDismiss: () -> Unit,
-    onEditRecord: (DrinkRecord) -> Unit,
+    onEditRecord: ((DrinkRecord) -> Unit)? = null,
     onDeleteRecord: (DrinkRecord) -> Unit
 ) {
     Dialog(onDismissRequest = onDismiss) {
@@ -139,13 +139,8 @@ fun RecordDetailDialog(
                                     }
                                 }
                                 
-                                Row {
-                                    TextButton(onClick = { onEditRecord(record) }) {
-                                        Text("수정", fontSize = 12.sp)
-                                    }
-                                    TextButton(onClick = { onDeleteRecord(record) }) {
-                                        Text("삭제", fontSize = 12.sp, color = androidx.compose.ui.graphics.Color.Red)
-                                    }
+                                TextButton(onClick = { onDeleteRecord(record) }) {
+                                    Text("삭제", fontSize = 12.sp, color = androidx.compose.ui.graphics.Color.Red)
                                 }
                             }
                         }
