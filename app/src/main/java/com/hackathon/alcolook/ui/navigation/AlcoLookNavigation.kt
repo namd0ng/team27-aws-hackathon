@@ -1,9 +1,14 @@
 package com.hackathon.alcolook.ui.navigation
 
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
@@ -13,6 +18,7 @@ import androidx.navigation.compose.rememberNavController
 import com.hackathon.alcolook.ui.home.HomeScreen
 import com.hackathon.alcolook.ui.calendar.CalendarScreen
 import com.hackathon.alcolook.ui.settings.SettingsScreen
+import com.hackathon.alcolook.ui.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -22,9 +28,31 @@ fun AlcoLookNavigation() {
     val currentDestination = navBackStackEntry?.destination
     
     Scaffold(
+        containerColor = AppBackground,
+        topBar = {
+            TopAppBar(
+                title = {
+                    Text(
+                        text = "AlcoLook",
+                        color = Color.Black,
+                        fontWeight = FontWeight.Bold
+                    )
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = Color.White,
+                    titleContentColor = Color.Black
+                )
+            )
+        },
         bottomBar = {
-            NavigationBar {
+            NavigationBar(
+                containerColor = BottomNavBackground,
+                contentColor = BottomNavSelected,
+                tonalElevation = 8.dp
+            ) {
                 AlcoLookDestinations.entries.forEach { destination ->
+                    val isSelected = currentDestination?.hierarchy?.any { it.route == destination.route } == true
+                    
                     NavigationBarItem(
                         icon = {
                             Text(
@@ -33,11 +61,17 @@ fun AlcoLookNavigation() {
                                     AlcoLookDestinations.CALENDAR -> "📅"
                                     AlcoLookDestinations.SETTINGS -> "⚙️"
                                 },
-                                style = MaterialTheme.typography.titleLarge
+                                fontSize = 24.sp
                             )
                         },
-                        label = { Text(destination.title) },
-                        selected = currentDestination?.hierarchy?.any { it.route == destination.route } == true,
+                        label = { 
+                            Text(
+                                text = destination.title,
+                                fontSize = 10.sp,
+                                fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal
+                            )
+                        },
+                        selected = isSelected,
                         onClick = {
                             navController.navigate(destination.route) {
                                 popUpTo(navController.graph.findStartDestination().id) {
@@ -46,7 +80,14 @@ fun AlcoLookNavigation() {
                                 launchSingleTop = true
                                 restoreState = true
                             }
-                        }
+                        },
+                        colors = NavigationBarItemDefaults.colors(
+                            selectedIconColor = BottomNavSelected,
+                            selectedTextColor = BottomNavSelected,
+                            unselectedIconColor = BottomNavUnselected,
+                            unselectedTextColor = BottomNavUnselected,
+                            indicatorColor = Color.Transparent
+                        )
                     )
                 }
             }
@@ -54,7 +95,7 @@ fun AlcoLookNavigation() {
     ) { innerPadding ->
         NavHost(
             navController = navController,
-            startDestination = AlcoLookDestinations.HOME.route,
+            startDestination = AlcoLookDestinations.CALENDAR.route,
             modifier = Modifier.padding(innerPadding)
         ) {
             composable(AlcoLookDestinations.HOME.route) {

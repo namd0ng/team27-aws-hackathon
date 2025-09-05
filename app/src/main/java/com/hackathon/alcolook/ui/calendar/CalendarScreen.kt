@@ -1,10 +1,8 @@
 package com.hackathon.alcolook.ui.calendar
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
@@ -17,8 +15,46 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.hackathon.alcolook.ui.theme.WarningSoft
-import com.hackathon.alcolook.ui.theme.DangerSoft
+import com.hackathon.alcolook.ui.theme.*
+
+enum class DrinkingStatus {
+    NORMAL, WARNING, DANGER
+}
+
+@Composable
+fun CalendarDayCell(
+    day: Int,
+    isToday: Boolean = false,
+    status: DrinkingStatus
+) {
+    val backgroundColor = when {
+        isToday -> CalendarToday
+        status == DrinkingStatus.WARNING -> WarningSoft
+        status == DrinkingStatus.DANGER -> DangerSoft
+        else -> Color.Transparent
+    }
+    
+    val textColor = when {
+        isToday -> CardBackground
+        else -> TextPrimary
+    }
+    
+    Box(
+        modifier = Modifier
+            .size(32.dp)
+            .clip(CircleShape)
+            .background(backgroundColor)
+            .clickable { /* TODO: Select date */ },
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = day.toString(),
+            style = MaterialTheme.typography.bodyMedium,
+            color = textColor,
+            fontWeight = if (isToday) FontWeight.SemiBold else FontWeight.Normal
+        )
+    }
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -27,31 +63,69 @@ fun CalendarScreen() {
     val tabs = listOf("월별", "통계")
     
     Column(
-        modifier = Modifier.fillMaxSize()
+        modifier = Modifier
+            .fillMaxSize()
+            .background(AppBackground)
     ) {
-        // Header
-        Text(
-            text = "캘린더",
-            style = MaterialTheme.typography.headlineMedium,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(16.dp)
-        )
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(CardBackground)
+                .padding(horizontal = 16.dp, vertical = 12.dp)
+        ) {
+            Text(
+                text = "음주 기록",
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.SemiBold,
+                color = TextPrimary
+            )
+            
+            Button(
+                onClick = { /* TODO: Add record */ },
+                modifier = Modifier.align(Alignment.CenterEnd),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = TabSelected
+                ),
+                shape = RoundedCornerShape(8.dp)
+            ) {
+                Text(
+                    text = "기록 추가",
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = CardBackground
+                )
+            }
+        }
         
-        // Tab Row
         TabRow(
             selectedTabIndex = selectedTab,
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            containerColor = TabBackground,
+            contentColor = TabSelected,
+            indicator = { tabPositions ->
+                TabRowDefaults.Indicator(
+                    color = TabIndicator,
+                    height = 2.dp
+                )
+            },
+            divider = {}
         ) {
             tabs.forEachIndexed { index, title ->
                 Tab(
                     selected = selectedTab == index,
                     onClick = { selectedTab = index },
-                    text = { Text(title) }
-                )
+                    modifier = Modifier.height(48.dp)
+                ) {
+                    Text(
+                        text = title,
+                        color = if (selectedTab == index) TabSelected else TabUnselected,
+                        fontWeight = if (selectedTab == index) FontWeight.SemiBold else FontWeight.Normal,
+                        fontSize = 16.sp
+                    )
+                }
             }
         }
         
-        // Tab Content
         when (selectedTab) {
             0 -> MonthlyCalendarContent()
             1 -> StatisticsContent()
@@ -64,78 +138,207 @@ private fun MonthlyCalendarContent() {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp)
+            .background(AppBackground)
     ) {
-        // Month Header
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = "2025년 1월",
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold
-            )
-            TextButton(onClick = { /* TODO: Date picker */ }) {
-                Text("날짜 이동")
-            }
-        }
-        
-        Spacer(modifier = Modifier.height(16.dp))
-        
-        // Calendar Grid
-        val daysOfWeek = listOf("일", "월", "화", "수", "목", "금", "토")
-        val daysInMonth = (1..31).toList()
-        
-        // Days of week header
-        LazyVerticalGrid(
-            columns = GridCells.Fixed(7),
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            items(daysOfWeek) { day ->
-                Text(
-                    text = day,
-                    textAlign = TextAlign.Center,
-                    style = MaterialTheme.typography.bodySmall,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(8.dp)
-                )
-            }
-            
-            items(daysInMonth) { day ->
-                CalendarDayCell(
-                    day = day,
-                    status = when {
-                        day % 7 == 0 -> DrinkingStatus.DANGER // 폭음
-                        day % 5 == 0 -> DrinkingStatus.WARNING // 주의
-                        else -> DrinkingStatus.NORMAL // 양호
-                    }
-                )
-            }
-        }
-        
-        Spacer(modifier = Modifier.height(16.dp))
-        
-        // Selected Date Records
         Card(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            colors = CardDefaults.cardColors(containerColor = CardBackground),
+            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+            shape = RoundedCornerShape(12.dp)
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                IconButton(
+                    onClick = { /* TODO: Previous month */ }
+                ) {
+                    Text(
+                        text = "<",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = TabSelected
+                    )
+                }
+                
+                TextButton(
+                    onClick = { /* TODO: Date picker */ },
+                    colors = ButtonDefaults.textButtonColors(contentColor = TextPrimary)
+                ) {
+                    Text(
+                        text = "2025년 9월",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+                
+                IconButton(
+                    onClick = { /* TODO: Next month */ }
+                ) {
+                    Text(
+                        text = ">",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = TabSelected
+                    )
+                }
+            }
+        }
+        
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp),
+            colors = CardDefaults.cardColors(containerColor = CardBackground),
+            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
             shape = RoundedCornerShape(12.dp)
         ) {
             Column(
                 modifier = Modifier.padding(16.dp)
             ) {
-                Text(
-                    text = "1월 15일 기록",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
+                val daysOfWeek = listOf("일", "월", "화", "수", "목", "금", "토")
+                Row(
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    daysOfWeek.forEach { day ->
+                        Box(
+                            modifier = Modifier.weight(1f),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = day,
+                                style = MaterialTheme.typography.bodySmall,
+                                fontWeight = FontWeight.Medium,
+                                color = TextSecondary,
+                                modifier = Modifier.padding(vertical = 8.dp)
+                            )
+                        }
+                    }
+                }
+                
+                HorizontalDivider(
+                    color = DividerColor,
+                    thickness = 0.5.dp
                 )
+                
                 Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = "아직 기록이 없어요",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                
+                val daysInMonth = (1..30).toList()
+                val startPadding = 0
+                val totalCells = startPadding + daysInMonth.size
+                val rows = (totalCells + 6) / 7
+                
+                repeat(rows) { row ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        repeat(7) { col ->
+                            val cellIndex = row * 7 + col
+                            val dayNumber = cellIndex - startPadding + 1
+                            
+                            Box(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .aspectRatio(1f)
+                                    .padding(2.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                if (dayNumber in 1..30) {
+                                    CalendarDayCell(
+                                        day = dayNumber,
+                                        isToday = dayNumber == 5,
+                                        status = when {
+                                            dayNumber % 7 == 0 -> DrinkingStatus.DANGER
+                                            dayNumber % 5 == 0 -> DrinkingStatus.WARNING
+                                            else -> DrinkingStatus.NORMAL
+                                        }
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        Spacer(modifier = Modifier.height(16.dp))
+        
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp),
+            colors = CardDefaults.cardColors(containerColor = CardBackground),
+            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+            shape = RoundedCornerShape(12.dp)
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "9월 5일 기록",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = TextPrimary
+                    )
+                    
+                    OutlinedButton(
+                        onClick = { /* TODO: Show summary */ },
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            contentColor = TabSelected
+                        ),
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        Text(
+                            text = "요약 보기",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                }
+                
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = "🍺",
+                        fontSize = 32.sp
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "기록된 음주가 없습니다",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = TextSecondary
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                    
+                    Button(
+                        onClick = { /* TODO: Add first record */ },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = TabSelected
+                        ),
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        Text(
+                            text = "첫 기록 추가하기",
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = CardBackground
+                        )
+                    }
+                }
             }
         }
     }
@@ -149,9 +352,9 @@ private fun StatisticsContent() {
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .background(AppBackground)
             .padding(16.dp)
     ) {
-        // Period Toggle
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.Center
@@ -159,102 +362,261 @@ private fun StatisticsContent() {
             periods.forEachIndexed { index, period ->
                 FilterChip(
                     onClick = { selectedPeriod = index },
-                    label = { Text(period) },
+                    label = { 
+                        Text(
+                            text = period,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                    },
                     selected = selectedPeriod == index,
-                    modifier = Modifier.padding(horizontal = 4.dp)
+                    modifier = Modifier.padding(horizontal = 4.dp),
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = TabSelected.copy(alpha = 0.1f),
+                        selectedLabelColor = TabSelected
+                    )
                 )
             }
         }
         
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(16.dp))
         
-        // Character Comment Card
         Card(
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(12.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.primaryContainer
-            )
+            colors = CardDefaults.cardColors(containerColor = CalendarSelected),
+            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+            shape = RoundedCornerShape(12.dp)
         ) {
             Column(
-                modifier = Modifier.padding(16.dp),
+                modifier = Modifier.padding(20.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
                     text = "🐕",
                     fontSize = 48.sp
                 )
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(12.dp))
                 Text(
-                    text = "이번 주는 건강한 한 주였어요!",
+                    text = "멍멍! 적당한 음주 패턴이에요. 건강한 음주 습관을 유지하고 계시네요! 👏",
                     style = MaterialTheme.typography.bodyLarge,
                     textAlign = TextAlign.Center,
-                    fontWeight = FontWeight.Medium
+                    fontWeight = FontWeight.Medium,
+                    color = TextPrimary
                 )
             }
         }
         
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(16.dp))
         
-        // Health Index
         Card(
             modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(containerColor = CardBackground),
+            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
             shape = RoundedCornerShape(12.dp)
         ) {
             Column(
                 modifier = Modifier.padding(16.dp)
             ) {
-                Text(
-                    text = "건강 지수",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
-                )
-                Spacer(modifier = Modifier.height(12.dp))
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "📊",
+                        fontSize = 16.sp
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "주간 건강 지수",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = TextPrimary
+                    )
+                }
+                
+                Spacer(modifier = Modifier.height(16.dp))
                 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceEvenly
+                    horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    HealthStatusBadge("양호", 5, Color(0xFF4CAF50))
-                    HealthStatusBadge("주의", 1, Color(0xFFFF9800))
-                    HealthStatusBadge("폭음", 0, Color(0xFFF44336))
+                    Text(
+                        text = "현재 상태",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = TextSecondary
+                    )
+                    Text(
+                        text = "좋음",
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = StatusNormal
+                    )
+                }
+                
+                Spacer(modifier = Modifier.height(8.dp))
+                
+                LinearProgressIndicator(
+                    progress = 0.3f,
+                    modifier = Modifier.fillMaxWidth(),
+                    color = StatusNormal,
+                    trackColor = AppBackground
+                )
+                
+                Spacer(modifier = Modifier.height(8.dp))
+                
+                Text(
+                    text = "일평균 0.5잔 (3.5잔/7일)",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = TextSecondary
+                )
+            }
+        }
+        
+        Spacer(modifier = Modifier.height(16.dp))
+        
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Card(
+                modifier = Modifier.weight(1f),
+                colors = CardDefaults.cardColors(containerColor = CardBackground),
+                elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "🍺",
+                            fontSize = 16.sp
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = "총 음주량",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = TextSecondary
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "3.5",
+                        style = MaterialTheme.typography.headlineMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = TextPrimary
+                    )
+                    Text(
+                        text = "잔",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = TextSecondary
+                    )
+                }
+            }
+            
+            Card(
+                modifier = Modifier.weight(1f),
+                colors = CardDefaults.cardColors(containerColor = CardBackground),
+                elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "🍶",
+                            fontSize = 16.sp
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = "선호 음주",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = TextSecondary
+                        )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "소주",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = TextPrimary
+                    )
+                    Text(
+                        text = "가장 많이",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = TextSecondary
+                    )
                 }
             }
         }
         
         Spacer(modifier = Modifier.height(16.dp))
         
-        // Weekly Trend (Simple Bar Chart)
         Card(
             modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(containerColor = CardBackground),
+            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
             shape = RoundedCornerShape(12.dp)
         ) {
             Column(
                 modifier = Modifier.padding(16.dp)
             ) {
-                Text(
-                    text = "주별 트렌드",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
-                )
-                Spacer(modifier = Modifier.height(12.dp))
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "📸",
+                        fontSize = 16.sp
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "얼굴 분석 결과",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = TextPrimary
+                    )
+                }
                 
-                // Simple bar chart placeholder
+                Spacer(modifier = Modifier.height(16.dp))
+                
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceEvenly,
-                    verticalAlignment = Alignment.Bottom
+                    horizontalArrangement = Arrangement.spacedBy(24.dp)
                 ) {
-                    repeat(7) { index ->
-                        val height = (20 + index * 10).dp
-                        Box(
-                            modifier = Modifier
-                                .width(24.dp)
-                                .height(height)
-                                .background(
-                                    MaterialTheme.colorScheme.primary,
-                                    RoundedCornerShape(4.dp)
-                                )
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = "2",
+                            style = MaterialTheme.typography.headlineMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = TextPrimary
+                        )
+                        Text(
+                            text = "분석 횟수",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = TextSecondary
+                        )
+                    }
+                    
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = "79%",
+                            style = MaterialTheme.typography.headlineMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = TextPrimary
+                        )
+                        Text(
+                            text = "평균 확률",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = TextSecondary
                         )
                     }
                 }
@@ -264,33 +626,7 @@ private fun StatisticsContent() {
 }
 
 @Composable
-private fun CalendarDayCell(
-    day: Int,
-    status: DrinkingStatus
-) {
-    val backgroundColor = when (status) {
-        DrinkingStatus.WARNING -> WarningSoft
-        DrinkingStatus.DANGER -> DangerSoft
-        else -> Color.Transparent
-    }
-    
-    Box(
-        modifier = Modifier
-            .size(40.dp)
-            .clip(CircleShape)
-            .background(backgroundColor),
-        contentAlignment = Alignment.Center
-    ) {
-        Text(
-            text = day.toString(),
-            style = MaterialTheme.typography.bodyMedium,
-            textAlign = TextAlign.Center
-        )
-    }
-}
-
-@Composable
-private fun HealthStatusBadge(
+fun HealthStatusBadge(
     label: String,
     count: Int,
     color: Color
@@ -304,19 +640,20 @@ private fun HealthStatusBadge(
                 .clip(CircleShape)
                 .background(color)
         )
-        Spacer(modifier = Modifier.height(4.dp))
+        Spacer(modifier = Modifier.height(6.dp))
         Text(
             text = label,
-            style = MaterialTheme.typography.bodySmall
+            style = MaterialTheme.typography.bodySmall,
+            color = TextSecondary,
+            fontSize = 12.sp
         )
         Text(
             text = "${count}일",
             style = MaterialTheme.typography.bodySmall,
-            fontWeight = FontWeight.Bold
+            fontWeight = FontWeight.SemiBold,
+            color = TextPrimary,
+            fontSize = 12.sp
         )
+        }
     }
-}
-
-enum class DrinkingStatus {
-    NORMAL, WARNING, DANGER
 }

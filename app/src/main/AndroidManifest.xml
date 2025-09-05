@@ -18,6 +18,7 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
+
         android:theme="@android:style/Theme.DeviceDefault.NoActionBar">
         
         <!-- 권한 근거 표시 활동 (Android 13 이하) -->
@@ -45,7 +46,9 @@
             android:name=".MainActivity"
             android:exported="true"
             android:label="@string/app_name"
+
             android:theme="@android:style/Theme.DeviceDefault.NoActionBar">
+
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -53,9 +56,11 @@
         </activity>
     </application>
 
+
     <!-- Health Connect 패키지 확인 -->
     <queries>
         <package android:name="com.google.android.apps.healthdata" />
     </queries>
+
 
 </manifest>
