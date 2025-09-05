@@ -127,8 +127,16 @@ fun LoginScreen(
                                 // AuthManager에 로그인 상태 저장
                                 val authManager = AuthManager.getInstance(context)
                                 
-                                // 임시 토큰 생성 (실제 토큰이 없을 경우)
-                                val token = loginResponse.token ?: "dummy_jwt_token_${System.currentTimeMillis()}"
+                                // 실제 토큰 사용 (더미 토큰 제거)
+                                val token = loginResponse.token
+                                android.util.Log.d("LoginScreen", "실제 토큰: $token")
+                                
+                                if (token == null) {
+                                    android.util.Log.w("LoginScreen", "서버에서 토큰을 반환하지 않았습니다")
+                                    errorMessage = "로그인 실패: 토큰을 받지 못했습니다"
+                                    return@launch
+                                }
+                                
                                 android.util.Log.d("LoginScreen", "사용할 토큰: $token")
                                 
                                 authManager.login(

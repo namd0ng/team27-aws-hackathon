@@ -10,12 +10,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.hackathon.alcolook.data.AuthManager
+import com.hackathon.alcolook.data.repository.DynamoDBProfileRepository
 import kotlinx.coroutines.launch
-import okhttp3.*
-import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.RequestBody.Companion.toRequestBody
-import org.json.JSONObject
-import java.io.IOException
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -24,6 +20,7 @@ fun SettingsScreen(
 ) {
     val context = LocalContext.current
     val authManager = remember { AuthManager.getInstance(context) }
+    val profileRepository = remember { DynamoDBProfileRepository(authManager) }
     val isLoggedIn by authManager.isLoggedIn.collectAsState()
     val userName by authManager.userName.collectAsState()
     
@@ -36,10 +33,10 @@ fun SettingsScreen(
     
     val scope = rememberCoroutineScope()
     
-    // DynamoDB에서 프로필 로드 (로컬 저장소 제거)
+    // DynamoDB에서 프로필 로드
     LaunchedEffect(isLoggedIn) {
         if (isLoggedIn) {
-            loadFromDynamoDB(authManager) { success, profile ->
+            profileRepository.loadProfile { success, profile ->
                 if (success && profile != null) {
                     selectedGender = when(profile.sex) {
                         "MALE" -> "남성"
@@ -330,13 +327,33 @@ fun SettingsScreen(
                                     return@launch
                                 }
                                 
-                                // DynamoDB에만 저장
-                                saveToDynamoDB(selectedGender, ageInput, weeklyGoalInput, authManager) { success, message ->
+                                // DynamoDB에 저장
+                                val genderValue = when(selectedGender) {
+                                    "남성" -> "MALE"
+                                    "여성" -> "FEMALE"
+                                    else -> "UNSET"
+                                }
+                                val ageValue = ageInput.toIntOrNull()
+                                val goalValue = weeklyGoalInput.toIntOrNull()
+                                
+                                profileRepository.saveProfile(genderValue, ageValue, goalValue) { success, message ->
                                     android.util.Log.d("SettingsScreen", "DynamoDB 결과: success=$success, message=$message")
-                                    saveMessage = if (success) {
-                                        "프로필이 저장되었습니다!"
+                                    if (success) {
+                                        saveMessage = "프로필이 저장되었습니다!"
+                                        // 저장 성공 시 프로필 다시 로드하여 동기화
+                                        profileRepository.loadProfile { loadSuccess, profile ->
+                                            if (loadSuccess && profile != null) {
+                                                selectedGender = when(profile.sex) {
+                                                    "MALE" -> "남성"
+                                                    "FEMALE" -> "여성"
+                                                    else -> "설정되지 않음"
+                                                }
+                                                ageInput = profile.age?.toString() ?: ""
+                                                weeklyGoalInput = profile.weeklyGoalStdDrinks?.toString() ?: ""
+                                            }
+                                        }
                                     } else {
-                                        "저장 실패: $message"
+                                        saveMessage = "저장 실패: $message"
                                     }
                                 }
                                 
@@ -390,128 +407,4 @@ private fun SettingsItem(
             )
         }
     }
-}
-
-// DynamoDB API 호출 함수 (PUT 방식으로 수정)
-private fun saveToDynamoDB(
-    gender: String,
-    age: String,
-    weeklyGoal: String,
-    authManager: AuthManager,
-    callback: (Boolean, String) -> Unit
-) {
-    val client = OkHttpClient()
-    val userId = authManager.getUserId()
-    val token = authManager.getToken()
-    
-    if (userId == null) {
-        callback(false, "사용자 ID가 없습니다")
-        return
-    }
-    
-    // 토큰이 없으면 더미 토큰 사용
-    val finalToken = token ?: "Bearer dummy_token"
-    
-    val apiUrl = "https://iql82o9kv2.execute-api.us-east-1.amazonaws.com/prod/update-profile"
-    
-    android.util.Log.d("DynamoDB", "API 호출 시작 - userId: $userId")
-    
-    val json = JSONObject().apply {
-        put("userId", userId)
-        put("sex", when(gender) {
-            "남성" -> "MALE"
-            "여성" -> "FEMALE"
-            else -> "UNSET"
-        })
-        put("age", age.toIntOrNull())
-        put("isSenior65", age.toIntOrNull()?.let { it >= 65 } ?: false)
-        put("weeklyGoalStdDrinks", weeklyGoal.toIntOrNull())
-    }
-    
-    android.util.Log.d("DynamoDB", "요청 데이터: $json")
-    
-    val requestBody = json.toString().toRequestBody("application/json".toMediaType())
-    
-    val request = Request.Builder()
-        .url(apiUrl)
-        .put(requestBody)  // POST -> PUT으로 변경
-        .addHeader("Authorization", "Bearer $finalToken")
-        .addHeader("Content-Type", "application/json")
-        .build()
-    
-    client.newCall(request).enqueue(object : Callback {
-        override fun onFailure(call: Call, e: IOException) {
-            android.util.Log.e("DynamoDB", "API 호출 실패", e)
-            android.os.Handler(android.os.Looper.getMainLooper()).post {
-                callback(false, e.message ?: "네트워크 오류")
-            }
-        }
-        
-        override fun onResponse(call: Call, response: Response) {
-            val responseBody = response.body?.string()
-            android.util.Log.d("DynamoDB", "API 응답: ${response.code}, body: $responseBody")
-            
-            android.os.Handler(android.os.Looper.getMainLooper()).post {
-                callback(response.isSuccessful, if (response.isSuccessful) "성공" else "서버 오류: ${response.code} - $responseBody")
-            }
-        }
-    })
-}
-
-// 프로필 데이터 클래스
-data class UserProfile(
-    val sex: String?,
-    val age: Int?,
-    val weeklyGoalStdDrinks: Int?
-)
-
-// DynamoDB에서 프로필 불러오기
-private fun loadFromDynamoDB(
-    authManager: AuthManager,
-    callback: (Boolean, UserProfile?) -> Unit
-) {
-    val client = OkHttpClient()
-    val userId = authManager.getUserId() ?: return callback(false, null)
-    val token = authManager.getToken() ?: return callback(false, null)
-    
-    val apiUrl = "https://iql82o9kv2.execute-api.us-east-1.amazonaws.com/prod/profile/$userId"
-    
-    val request = Request.Builder()
-        .url(apiUrl)
-        .get()
-        .addHeader("Authorization", "Bearer $token")
-        .build()
-    
-    client.newCall(request).enqueue(object : Callback {
-        override fun onFailure(call: Call, e: IOException) {
-            android.util.Log.e("DynamoDB", "프로필 로드 실패", e)
-            android.os.Handler(android.os.Looper.getMainLooper()).post {
-                callback(false, null)
-            }
-        }
-        
-        override fun onResponse(call: Call, response: Response) {
-            val responseBody = response.body?.string()
-            android.util.Log.d("DynamoDB", "프로필 로드 응답: ${response.code}, body: $responseBody")
-            
-            android.os.Handler(android.os.Looper.getMainLooper()).post {
-                if (response.isSuccessful && responseBody != null) {
-                    try {
-                        val json = org.json.JSONObject(responseBody)
-                        val profile = UserProfile(
-                            sex = json.optString("sex", null),
-                            age = if (json.has("age")) json.getInt("age") else null,
-                            weeklyGoalStdDrinks = if (json.has("weeklyGoalStdDrinks")) json.getInt("weeklyGoalStdDrinks") else null
-                        )
-                        callback(true, profile)
-                    } catch (e: Exception) {
-                        android.util.Log.e("DynamoDB", "JSON 파싱 오류", e)
-                        callback(false, null)
-                    }
-                } else {
-                    callback(false, null)
-                }
-            }
-        }
-    })
 }

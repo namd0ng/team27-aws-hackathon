@@ -69,12 +69,12 @@ def lambda_handler(event, context):
                 })
             }
         
-        # JWT 토큰 생성
+        # JWT 토큰 생성 (무제한 기한)
         payload = {
             'user_id': user['user_id'],
             'email': user['email'],
-            'name': user['name'],
-            'exp': datetime.utcnow() + timedelta(days=7)  # 7일 후 만료
+            'name': user['name']
+            # exp 제거 - 무제한 기한
         }
         token = jwt.encode(payload, JWT_SECRET, algorithm='HS256')
         
