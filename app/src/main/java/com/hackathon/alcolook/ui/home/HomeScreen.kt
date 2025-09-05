@@ -11,6 +11,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
@@ -33,111 +34,13 @@ fun HomeScreen() {
     val cameraPermissionState = rememberPermissionState(Manifest.permission.CAMERA)
     var faces by remember { mutableStateOf<List<FaceBox>>(emptyList()) }
     var isAnalyzing by remember { mutableStateOf(false) }
-    var currentMode by remember { mutableStateOf("home") } // "home", "camera", "photo"
+    var isCameraActive by remember { mutableStateOf(false) }
     val realTimeDrunkDetectionService = remember { DrunkDetectionService(context) }
     val photoDrunkDetectionService = remember { PhotoDrunkDetectionService(context) }
     val coroutineScope = rememberCoroutineScope()
+    var currentMode by remember { mutableStateOf("home") }
     
     when (currentMode) {
-        "camera" -> {
-            if (cameraPermissionState.status == PermissionStatus.Granted) {
-                // 실시간 카메라 모드
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(Color.Black)
-                ) {
-                    CameraPreview(
-                        onImageCaptured = { bitmap ->
-                            if (!isAnalyzing) {
-                                isAnalyzing = true
-                                coroutineScope.launch {
-                                    try {
-                                        val result = realTimeDrunkDetectionService.detectDrunkLevel(bitmap)
-                                        faces = result.faces
-                                    } finally {
-                                        isAnalyzing = false
-                                    }
-                                }
-                            }
-                        },
-                        modifier = Modifier.fillMaxSize()
-                    )
-                    
-                    // 얼굴 박스 오버레이
-                    if (faces.isNotEmpty()) {
-                        FaceDetectionOverlay(
-                            faces = faces,
-                            imageWidth = 640,
-                            imageHeight = 480,
-                            displayWidth = with(LocalDensity.current) { 
-                                LocalConfiguration.current.screenWidthDp.dp.toPx() 
-                            },
-                            displayHeight = with(LocalDensity.current) { 
-                                LocalConfiguration.current.screenHeightDp.dp.toPx() 
-                            }
-                        )
-                    }
-                    
-                    // 하단 버튼들
-                    Row(
-                        modifier = Modifier
-                            .align(Alignment.BottomCenter)
-                            .padding(32.dp),
-                        horizontalArrangement = Arrangement.spacedBy(16.dp)
-                    ) {
-                        Button(
-                            onClick = { currentMode = "home" },
-                            colors = ButtonDefaults.buttonColors(containerColor = Color.Gray.copy(alpha = 0.8f))
-                        ) {
-                            Text("홈으로", color = Color.White)
-                        }
-                        
-                        Button(
-                            onClick = { currentMode = "photo" },
-                            colors = ButtonDefaults.buttonColors(containerColor = Color.Blue.copy(alpha = 0.8f))
-                        ) {
-                            Text("사진 업로드", color = Color.White)
-                        }
-                    }
-                }
-            } else {
-                // 권한 요청 화면
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(32.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    Text(
-                        text = "카메라 권한이 필요합니다",
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold,
-                        textAlign = TextAlign.Center
-                    )
-                    
-                    Spacer(modifier = Modifier.height(16.dp))
-                    
-                    Button(
-                        onClick = { cameraPermissionState.launchPermissionRequest() },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text("권한 허용")
-                    }
-                    
-                    Spacer(modifier = Modifier.height(16.dp))
-                    
-                    Button(
-                        onClick = { currentMode = "home" },
-                        colors = ButtonDefaults.buttonColors(containerColor = Color.Gray)
-                    ) {
-                        Text("홈으로 돌아가기")
-                    }
-                }
-            }
-        }
-        
         "photo" -> {
             PhotoUploadScreen(
                 photoDrunkDetectionService = photoDrunkDetectionService,
@@ -157,7 +60,7 @@ fun HomeScreen() {
             ) {
                 Spacer(modifier = Modifier.height(16.dp))
                 
-                // Camera preview area
+                // Camera preview area - 네모 박스 안에 카메라 표시
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -183,33 +86,77 @@ fun HomeScreen() {
                             ),
                         contentAlignment = Alignment.Center
                     ) {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Surface(
-                                modifier = Modifier.size(48.dp),
-                                shape = RoundedCornerShape(12.dp),
-                                color = Color(0xFFE0E0E0)
+                        if (isCameraActive && cameraPermissionState.status == PermissionStatus.Granted) {
+                            // 카메라 프리뷰를 네모 박스 안에 표시
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .background(Color.Black, RoundedCornerShape(14.dp))
                             ) {
-                                Box(
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Text(
-                                        text = "📷",
-                                        fontSize = 20.sp,
-                                        color = Color.Gray
+                                CameraPreview(
+                                    onImageCaptured = { bitmap ->
+                                        if (!isAnalyzing) {
+                                            isAnalyzing = true
+                                            coroutineScope.launch {
+                                                try {
+                                                    val result = realTimeDrunkDetectionService.detectDrunkLevel(bitmap)
+                                                    faces = result.faces
+                                                } finally {
+                                                    isAnalyzing = false
+                                                }
+                                            }
+                                        }
+                                    },
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .clip(RoundedCornerShape(14.dp))
+                                )
+                                
+                                // 얼굴 박스 오버레이
+                                if (faces.isNotEmpty()) {
+                                    FaceDetectionOverlay(
+                                        faces = faces,
+                                        imageWidth = 640,
+                                        imageHeight = 480,
+                                        displayWidth = with(LocalDensity.current) { 
+                                            (LocalConfiguration.current.screenWidthDp - 32).dp.toPx()
+                                        },
+                                        displayHeight = with(LocalDensity.current) { 
+                                            (LocalConfiguration.current.screenWidthDp - 32).dp.toPx()
+                                        }
                                     )
                                 }
                             }
-                            
-                            Spacer(modifier = Modifier.height(12.dp))
-                            
-                            Text(
-                                text = "카메라를 얼굴에 맞춰 촬영해주세요",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = Color.Gray,
-                                textAlign = TextAlign.Center
-                            )
+                        } else {
+                            // 카메라 비활성 상태 - 기본 아이콘 표시
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Surface(
+                                    modifier = Modifier.size(48.dp),
+                                    shape = RoundedCornerShape(12.dp),
+                                    color = Color(0xFFE0E0E0)
+                                ) {
+                                    Box(
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text(
+                                            text = "📷",
+                                            fontSize = 20.sp,
+                                            color = Color.Gray
+                                        )
+                                    }
+                                }
+                                
+                                Spacer(modifier = Modifier.height(12.dp))
+                                
+                                Text(
+                                    text = if (isCameraActive) "카메라 권한을 허용해주세요" else "카메라를 얼굴에 맞춰 촬영해주세요",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = Color.Gray,
+                                    textAlign = TextAlign.Center
+                                )
+                            }
                         }
                     }
                 }
@@ -218,13 +165,21 @@ fun HomeScreen() {
                 
                 // Capture button
                 Button(
-                    onClick = { currentMode = "camera" },
+                    onClick = { 
+                        if (isCameraActive) {
+                            isCameraActive = false
+                        } else if (cameraPermissionState.status == PermissionStatus.Granted) {
+                            isCameraActive = true
+                        } else {
+                            cameraPermissionState.launchPermissionRequest()
+                        }
+                    },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(48.dp)
                         .padding(horizontal = 8.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = Color.Black
+                        containerColor = if (isCameraActive) Color.Red else Color.Black
                     ),
                     shape = RoundedCornerShape(12.dp)
                 ) {
@@ -232,13 +187,13 @@ fun HomeScreen() {
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "📷",
+                            text = if (isCameraActive) "⏹️" else "📷",
                             fontSize = 18.sp,
                             color = Color.White
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = "실시간 카메라 시작",
+                            text = if (isCameraActive) "카메라 중지" else "실시간 카메라 시작",
                             style = MaterialTheme.typography.bodyLarge,
                             fontWeight = FontWeight.SemiBold,
                             color = Color.White
