@@ -24,3 +24,25 @@ local.properties
 .Trashes
 ehthumbs.db
 Thumbs.db
+
+.gradle
+/local.properties
+/.idea/caches
+/.idea/libraries
+/.idea/modules.xml
+/.idea/workspace.xml
+/.idea/navEditor.xml
+/.idea/assetWizardSettings.xml
+.DS_Store
+/build
+/captures
+.externalNativeBuild
+.cxx
+local.properties
+# Test datasets and analysis results
+drunk-images/
+test-images/
+analysis-results/
+*.log
+batch-analysis-*.txt
+test-results-*.json

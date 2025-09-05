@@ -14,7 +14,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.hackathon.alcolook.ui.home.HomeScreen
+import com.hackathon.alcolook.ui.home.NewHomeScreen
 import com.hackathon.alcolook.ui.calendar.CalendarScreen
 import com.hackathon.alcolook.ui.settings.SettingsScreen
 import com.hackathon.alcolook.ui.auth.LoginScreen
@@ -91,11 +91,11 @@ fun AlcoLookNavigation() {
     ) { innerPadding ->
         NavHost(
             navController = navController,
-            startDestination = AlcoLookDestinations.CALENDAR.route,
+            startDestination = AlcoLookDestinations.HOME.route,
             modifier = Modifier.padding(innerPadding)
         ) {
             composable(AlcoLookDestinations.HOME.route) {
-                HomeScreen()
+                NewHomeScreen(navController)
             }
             composable(AlcoLookDestinations.CALENDAR.route) {
                 CalendarScreen()
