@@ -100,14 +100,14 @@ fun CalendarScreen(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(CardBackground)
-                .padding(horizontal = 20.dp, vertical = 16.dp)
+                .background(Color.White)
+                .padding(16.dp)
         ) {
             Text(
                 text = "음주 기록",
                 style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.SemiBold,
-                color = TextPrimary
+                fontWeight = FontWeight.Bold,
+                color = Color.Black
             )
             
             Button(
@@ -115,28 +115,37 @@ fun CalendarScreen(
                     android.util.Log.d("AlcoLook", "기록 추가 버튼 클릭됨")
                     showAddDialog = true 
                 },
-                modifier = Modifier.align(Alignment.CenterEnd),
+                modifier = Modifier
+                    .align(Alignment.CenterEnd)
+                    .height(32.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primary
+                    containerColor = Color.Black
                 ),
-                shape = RoundedCornerShape(20.dp),
-                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
+                shape = RoundedCornerShape(16.dp),
+                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp)
             ) {
                 Text(
-                    text = "기록 추가",
-                    fontSize = 14.sp,
+                    text = "+ 기록 추가",
+                    fontSize = 12.sp,
                     fontWeight = FontWeight.Medium,
                     color = Color.White
                 )
             }
         }
         
+        // 구분선
+        HorizontalDivider(
+            color = DividerColor,
+            thickness = 0.5.dp,
+            modifier = Modifier.padding(horizontal = 16.dp)
+        )
+        
         // Main Tab Row - 월별/통계 탭 (Figma 디자인 기준으로 중앙 정렬, 적절한 간격)
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .background(CardBackground)
-                .padding(horizontal = 20.dp, vertical = 12.dp),
+                .padding(horizontal = 16.dp, vertical = 10.dp),
             horizontalArrangement = Arrangement.Center
         ) {
             tabs.forEachIndexed { index, title ->
