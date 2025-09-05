@@ -8,7 +8,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.*
@@ -88,8 +87,6 @@ fun CalendarScreen(
     val selectedTab by viewModel.selectedTab.collectAsStateWithLifecycle()
     val tabs = listOf("월별", "통계")
     var showAddDialog by remember { mutableStateOf(false) }
-    var showEditDialog by remember { mutableStateOf(false) }
-    var editingRecord by remember { mutableStateOf<com.hackathon.alcolook.data.model.DrinkRecord?>(null) }
     
     Column(
         modifier = Modifier
@@ -197,28 +194,6 @@ fun CalendarScreen(
                         note = note
                     )
                     showAddDialog = false
-                }
-            )
-        }
-        
-        if (showEditDialog && editingRecord != null) {
-            com.hackathon.alcolook.ui.components.EditRecordDialog(
-                record = editingRecord!!,
-                onDismiss = { 
-                    showEditDialog = false
-                    editingRecord = null
-                },
-                onConfirm = { type: DrinkType, unit: DrinkUnit, quantity: Int, abv: Float?, note: String? ->
-                    viewModel.updateDrinkRecord(
-                        recordId = editingRecord!!.id,
-                        type = type,
-                        unit = unit,
-                        quantity = quantity,
-                        customAbv = abv,
-                        note = note
-                    )
-                    showEditDialog = false
-                    editingRecord = null
                 }
             )
         }
@@ -545,15 +520,6 @@ private fun MonthlyCalendarContent(
                             }
                             
                             Row {
-                                IconButton(
-                                    onClick = { /* Edit record */ }
-                                ) {
-                                    Icon(
-                                        Icons.Default.Edit,
-                                        contentDescription = "수정",
-                                        tint = TextSecondary
-                                    )
-                                }
                                 IconButton(
                                     onClick = { 
                                         viewModel.deleteDrinkRecord(record.id)
