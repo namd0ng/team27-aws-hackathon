@@ -29,6 +29,21 @@ fun AlcoLookNavigation() {
     
     Scaffold(
         containerColor = AppBackground,
+        topBar = {
+            TopAppBar(
+                title = {
+                    Text(
+                        text = "AlcoLook",
+                        color = Color.Black,
+                        fontWeight = FontWeight.Bold
+                    )
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = Color.White,
+                    titleContentColor = Color.Black
+                )
+            )
+        },
         bottomBar = {
             NavigationBar(
                 containerColor = BottomNavBackground,
