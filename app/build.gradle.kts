@@ -54,6 +54,13 @@ dependencies {
     implementation("com.amazonaws:aws-android-sdk-rekognition:2.77.0")
     implementation("com.amazonaws:aws-android-sdk-core:2.77.0")
     
+    // HTTP client for Bedrock API
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
+    implementation("com.amazonaws:aws-android-sdk-core:2.77.0")
+    
+    // JSON parsing
+    implementation("org.json:json:20231013")
+    
     // Camera
     implementation("androidx.camera:camera-camera2:1.3.4")
     implementation("androidx.camera:camera-lifecycle:1.3.4")
