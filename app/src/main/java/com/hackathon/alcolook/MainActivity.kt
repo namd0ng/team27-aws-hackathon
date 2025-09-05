@@ -14,6 +14,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -39,27 +42,30 @@ class MainActivity : ComponentActivity() {
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
 fun DrunkDetectionScreen() {
+    val context = LocalContext.current
     val cameraPermissionState = rememberPermissionState(Manifest.permission.CAMERA)
-    var drunkPercentage by remember { mutableStateOf(0) }
+    var faces by remember { mutableStateOf<List<FaceBox>>(emptyList()) }
     var isAnalyzing by remember { mutableStateOf(false) }
-    val drunkDetectionService = remember { DrunkDetectionService() }
+    var currentMode by remember { mutableStateOf("camera") } // "camera" or "photo"
+    val realTimeDrunkDetectionService = remember { DrunkDetectionService(context) }
+    val photoDrunkDetectionService = remember { PhotoDrunkDetectionService(context) }
     val coroutineScope = rememberCoroutineScope()
     
-    if (cameraPermissionState.status == PermissionStatus.Granted) {
+    if (cameraPermissionState.status == PermissionStatus.Granted && currentMode == "camera") {
+        // 실시간 카메라 모드
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .background(Color.Black)
         ) {
-            // 카메라 미리보기
             CameraPreview(
                 onImageCaptured = { bitmap ->
                     if (!isAnalyzing) {
                         isAnalyzing = true
                         coroutineScope.launch {
                             try {
-                                val result = drunkDetectionService.detectDrunkLevel(bitmap)
-                                drunkPercentage = result
+                                val result = realTimeDrunkDetectionService.detectDrunkLevel(bitmap)
+                                faces = result.faces
                             } finally {
                                 isAnalyzing = false
                             }
@@ -69,61 +75,38 @@ fun DrunkDetectionScreen() {
                 modifier = Modifier.fillMaxSize()
             )
             
-            // 결과 표시 오버레이
-            Column(
+            // 얼굴 박스 오버레이
+            if (faces.isNotEmpty()) {
+                FaceDetectionOverlay(
+                    faces = faces,
+                    imageWidth = 640, // 카메라 해상도에 맞게 조정
+                    imageHeight = 480,
+                    displayWidth = with(LocalDensity.current) { 
+                        LocalConfiguration.current.screenWidthDp.dp.toPx() 
+                    },
+                    displayHeight = with(LocalDensity.current) { 
+                        LocalConfiguration.current.screenHeightDp.dp.toPx() 
+                    }
+                )
+            }
+            
+            // 하단 모드 전환 버튼
+            Button(
+                onClick = { currentMode = "photo" },
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
-                    .padding(32.dp)
-                    .background(
-                        Color.Black.copy(alpha = 0.7f),
-                        shape = MaterialTheme.shapes.large
-                    )
-                    .padding(24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+                    .padding(32.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Color.Blue.copy(alpha = 0.8f))
             ) {
-                Text(
-                    text = "음주 감지 결과",
-                    color = Color.White,
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold
-                )
-                
-                Spacer(modifier = Modifier.height(16.dp))
-                
-                // 퍼센트 표시
-                Box(
-                    modifier = Modifier
-                        .size(120.dp)
-                        .clip(CircleShape)
-                        .background(getColorForPercentage(drunkPercentage)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = "${drunkPercentage}%",
-                        color = Color.White,
-                        fontSize = 24.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-                
-                Spacer(modifier = Modifier.height(16.dp))
-                
-                Text(
-                    text = getDrunkMessage(drunkPercentage),
-                    color = Color.White,
-                    fontSize = 16.sp,
-                    textAlign = TextAlign.Center
-                )
-                
-                if (isAnalyzing) {
-                    Spacer(modifier = Modifier.height(8.dp))
-                    CircularProgressIndicator(
-                        color = Color.White,
-                        modifier = Modifier.size(24.dp)
-                    )
-                }
+                Text("사진 업로드 모드", color = Color.White)
             }
         }
+    } else if (currentMode == "photo") {
+        // 사진 업로드 모드
+        PhotoUploadScreen(
+            photoDrunkDetectionService = photoDrunkDetectionService,
+            onBackToCamera = { currentMode = "camera" }
+        )
     } else {
         // 권한 요청 화면
         Column(
@@ -134,18 +117,48 @@ fun DrunkDetectionScreen() {
             verticalArrangement = Arrangement.Center
         ) {
             Text(
-                text = "카메라 권한이 필요합니다",
-                fontSize = 18.sp,
+                text = "AlcoLook",
+                fontSize = 28.sp,
+                fontWeight = FontWeight.Bold,
                 textAlign = TextAlign.Center
             )
             
             Spacer(modifier = Modifier.height(16.dp))
             
+            Text(
+                text = "음주 감지 앱",
+                fontSize = 16.sp,
+                textAlign = TextAlign.Center,
+                color = Color.Gray
+            )
+            
+            Spacer(modifier = Modifier.height(48.dp))
+            
             Button(
-                onClick = { cameraPermissionState.launchPermissionRequest() }
+                onClick = { cameraPermissionState.launchPermissionRequest() },
+                modifier = Modifier.fillMaxWidth()
             ) {
-                Text("권한 허용")
+                Text("실시간 카메라 모드 시작")
             }
+            
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            Button(
+                onClick = { currentMode = "photo" },
+                colors = ButtonDefaults.buttonColors(containerColor = Color.Blue),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("사진 업로드 모드 시작")
+            }
+            
+            Spacer(modifier = Modifier.height(32.dp))
+            
+            Text(
+                text = "실시간 모드는 카메라 권한이 필요합니다",
+                fontSize = 14.sp,
+                textAlign = TextAlign.Center,
+                color = Color.Gray
+            )
         }
     }
 }
