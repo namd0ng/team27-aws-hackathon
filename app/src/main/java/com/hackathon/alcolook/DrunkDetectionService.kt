@@ -12,25 +12,35 @@ class DrunkDetectionService {
     private val rekognitionClient = AwsConfig.getRekognitionClient()
     
     suspend fun detectDrunkLevel(bitmap: Bitmap): Int = withContext(Dispatchers.IO) {
-        try {
-            val imageBytes = bitmapToByteBuffer(bitmap)
-            val image = Image().withBytes(imageBytes)
-            
-            val request = DetectFacesRequest()
-                .withImage(image)
-                .withAttributes(Attribute.ALL)
-            
-            val result = rekognitionClient.detectFaces(request)
-            
-            if (result.faceDetails.isNotEmpty()) {
-                calculateDrunkPercentage(result.faceDetails[0])
-            } else {
-                0 // 얼굴이 감지되지 않음
+        return@withContext if (AwsConfig.TEST_MODE || rekognitionClient == null) {
+            // 테스트 모드: 랜덤 값 반환 (실제 카메라 테스트 가능)
+            generateTestDrunkLevel()
+        } else {
+            try {
+                val imageBytes = bitmapToByteBuffer(bitmap)
+                val image = Image().withBytes(imageBytes)
+                
+                val request = DetectFacesRequest()
+                    .withImage(image)
+                    .withAttributes(Attribute.ALL)
+                
+                val result = rekognitionClient.detectFaces(request)
+                
+                if (result.faceDetails.isNotEmpty()) {
+                    calculateDrunkPercentage(result.faceDetails[0])
+                } else {
+                    0 // 얼굴이 감지되지 않음
+                }
+            } catch (e: Exception) {
+                // AWS 연결 실패 시 테스트 값 반환
+                generateTestDrunkLevel()
             }
-        } catch (e: Exception) {
-            // 실제 AWS 연결 없이 테스트용 랜덤 값 반환
-            (20..80).random()
         }
+    }
+    
+    private fun generateTestDrunkLevel(): Int {
+        // 테스트용 랜덤 값 (20-80% 범위)
+        return (20..80).random()
     }
     
     private fun calculateDrunkPercentage(faceDetail: FaceDetail): Int {
