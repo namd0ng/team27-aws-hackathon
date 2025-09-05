@@ -270,7 +270,7 @@ private fun MonthlyCalendarContent(
                             text = "<",
                             fontSize = 18.sp,
                             fontWeight = FontWeight.Bold,
-                            color = TabSelected
+                            color = Color.Black
                         )
                     }
                     
@@ -292,7 +292,7 @@ private fun MonthlyCalendarContent(
                             text = ">",
                             fontSize = 18.sp,
                             fontWeight = FontWeight.Bold,
-                            color = TabSelected
+                            color = Color.Black
                         )
                     }
                 }
