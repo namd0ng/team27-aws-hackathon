@@ -149,9 +149,9 @@ fun PhotoUploadScreen(
                         coroutineScope.launch {
                             try {
                                 val result = photoDrunkDetectionService.detectDrunkLevel(bitmap)
-                                faces = result.faces
+                                faces = result.faceBoxes
                                 analysisResult = result
-                                selectedFaceIndex = if (result.faces.isNotEmpty()) 0 else null
+                                selectedFaceIndex = if (result.faceBoxes.isNotEmpty()) 0 else null
                             } finally {
                                 isAnalyzing = false
                             }
@@ -240,7 +240,7 @@ fun PhotoUploadScreen(
                         Spacer(modifier = Modifier.height(8.dp))
                         
                         val selectedFace = selectedFaceIndex?.let { faces.getOrNull(it) }
-                        val displayLevel = selectedFace?.drunkPercentage?.toFloat() ?: result.drunkLevel
+                        val displayLevel = selectedFace?.drunkPercentage?.toFloat() ?: result.drunkPercentage
                         
                         Text(
                             text = if (faces.size > 1 && selectedFace != null) {

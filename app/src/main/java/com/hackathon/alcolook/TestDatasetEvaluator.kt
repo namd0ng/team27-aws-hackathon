@@ -56,7 +56,7 @@ class TestDatasetEvaluator(private val context: Context) {
                 val bitmap = loadImageFromAssets(imageName)
                 if (bitmap != null) {
                     val analysisResult = drunkDetectionService.detectDrunkLevel(bitmap)
-                    val predictedLevel = analysisResult.drunkLevel.toInt()
+                    val predictedLevel = analysisResult.drunkPercentage.toInt()
                     val accuracy = calculateAccuracy(expectedLevel, predictedLevel)
                     
                     val result = TestResult(imageName, expectedLevel, predictedLevel, accuracy)

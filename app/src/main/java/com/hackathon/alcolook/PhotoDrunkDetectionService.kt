@@ -9,12 +9,6 @@ import kotlinx.coroutines.withContext
 import java.io.ByteArrayOutputStream
 import java.nio.ByteBuffer
 
-data class DrunkDetectionResult(
-    val drunkLevel: Float,
-    val message: String,
-    val faces: List<FaceBox> = emptyList()
-)
-
 class PhotoDrunkDetectionService(private val context: Context) {
     
     companion object {

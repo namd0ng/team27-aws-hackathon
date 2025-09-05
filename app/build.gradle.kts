@@ -71,6 +71,9 @@ dependencies {
     
     // Permissions
     implementation("com.google.accompanist:accompanist-permissions:0.32.0")
+    
+    // Image loading
+    implementation("io.coil-kt:coil-compose:2.5.0")
    
     implementation(libs.androidx.navigation.compose)
     

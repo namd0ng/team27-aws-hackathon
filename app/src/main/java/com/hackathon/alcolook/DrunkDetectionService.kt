@@ -18,6 +18,12 @@ data class FaceBox(
     val personId: String
 )
 
+data class DrunkDetectionResult(
+    val drunkPercentage: Float,
+    val message: String,
+    val faceBoxes: List<FaceBox>
+)
+
 class DrunkDetectionService(private val context: Context) {
     
     companion object {

@@ -9,7 +9,7 @@ import java.io.File
 
 data class ImageAnalysisResult(
     val fileName: String,
-    val drunkLevel: Int,
+    val drunkPercentage: Int,
     val hasError: Boolean = false
 )
 
@@ -51,7 +51,7 @@ class BatchImageAnalyzer(private val context: Context) {
                 val bitmap = BitmapFactory.decodeFile(imageFile.absolutePath)
                 if (bitmap != null) {
                     val result = drunkDetectionService.detectDrunkLevel(bitmap)
-                    val drunkLevel = result.drunkLevel.toInt()
+                    val drunkLevel = result.drunkPercentage.toInt()
                     results.add(ImageAnalysisResult(imageFile.name, drunkLevel))
                     
                     totalDrunkLevel += drunkLevel
@@ -91,7 +91,7 @@ class BatchImageAnalyzer(private val context: Context) {
     private fun analyzeDistribution(validResults: List<ImageAnalysisResult>) {
         if (validResults.isEmpty()) return
         
-        val levels = validResults.map { it.drunkLevel }
+        val levels = validResults.map { it.drunkPercentage }
         val sober = levels.count { it < 20 }
         val light = levels.count { it in 20..40 }
         val moderate = levels.count { it in 41..70 }
