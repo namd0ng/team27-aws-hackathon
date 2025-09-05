@@ -6,28 +6,24 @@ import androidx.compose.ui.graphics.Color
 val WarningSoft = Color(0xFFFFF4E5) // 주의 상태
 val DangerSoft = Color(0xFFFDEBEC) // 폭음 상태
 
-// Material 3 Colors
-val Primary = Color(0xFF6750A4)
-val OnPrimary = Color(0xFFFFFFFF)
-val PrimaryContainer = Color(0xFFEADDFF)
-val OnPrimaryContainer = Color(0xFF21005D)
+// App-specific Colors (from screenshots)
+val AppBackground = Color(0xFFFAFAFA) // Light gray background
+val CardBackground = Color(0xFFFFFFFF) // Pure white cards
+val TabBackground = Color(0xFFFFFFFF) // White tab background
+val TabIndicator = Color(0xFF007AFF) // Blue tab indicator
+val TabSelected = Color(0xFF007AFF) // Selected tab text
+val TabUnselected = Color(0xFF8E8E93) // Unselected tab text
+val CalendarToday = Color(0xFF007AFF) // Today highlight
+val CalendarSelected = Color(0xFFE3F2FD) // Selected date background
+val DividerColor = Color(0xFFE5E5EA) // Light divider
+val TextPrimary = Color(0xFF000000) // Primary text
+val TextSecondary = Color(0xFF8E8E93) // Secondary text
+val TextTertiary = Color(0xFFAEAEB2) // Tertiary text
+val BottomNavBackground = Color(0xFFFFFFFF) // Bottom nav background
+val BottomNavSelected = Color(0xFF007AFF) // Selected bottom nav
+val BottomNavUnselected = Color(0xFF8E8E93) // Unselected bottom nav
 
-val Secondary = Color(0xFF625B71)
-val OnSecondary = Color(0xFFFFFFFF)
-val SecondaryContainer = Color(0xFFE8DEF8)
-val OnSecondaryContainer = Color(0xFF1D192B)
-
-val Tertiary = Color(0xFF7D5260)
-val OnTertiary = Color(0xFFFFFFFF)
-val TertiaryContainer = Color(0xFFFFD8E4)
-val OnTertiaryContainer = Color(0xFF31111D)
-
-val Background = Color(0xFFFFFBFE)
-val OnBackground = Color(0xFF1C1B1F)
-val Surface = Color(0xFFFFFBFE)
-val OnSurface = Color(0xFF1C1B1F)
-val SurfaceVariant = Color(0xFFE7E0EC)
-val OnSurfaceVariant = Color(0xFF49454F)
-
-val Outline = Color(0xFF79747E)
-val OutlineVariant = Color(0xFFCAC4D0)
+// Status Colors
+val StatusNormal = Color(0xFF34C759) // Green for normal
+val StatusWarning = Color(0xFFFF9500) // Orange for warning  
+val StatusDanger = Color(0xFFFF3B30) // Red for danger
