@@ -75,4 +75,7 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
+    
+    // Guava (CameraX 호환성)
+    implementation("com.google.guava:guava:31.1-android")
 }
