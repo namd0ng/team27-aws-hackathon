@@ -29,7 +29,8 @@ import kotlinx.coroutines.launch
 @Composable
 fun PhotoUploadScreen(
     photoDrunkDetectionService: PhotoDrunkDetectionService,
-    onBackToCamera: () -> Unit
+    onBackToCamera: () -> Unit,
+    onSaveRecord: (Float) -> Unit = {}
 ) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
@@ -38,6 +39,8 @@ fun PhotoUploadScreen(
     var selectedBitmap by remember { mutableStateOf<Bitmap?>(null) }
     var faces by remember { mutableStateOf<List<FaceBox>>(emptyList()) }
     var isAnalyzing by remember { mutableStateOf(false) }
+    var analysisResult by remember { mutableStateOf<DrunkDetectionResult?>(null) }
+    var selectedFaceIndex by remember { mutableStateOf<Int?>(null) }
     
     val imagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
@@ -48,6 +51,9 @@ fun PhotoUploadScreen(
                 val inputStream = context.contentResolver.openInputStream(it)
                 val bitmap = BitmapFactory.decodeStream(inputStream)
                 selectedBitmap = bitmap
+                faces = emptyList()
+                analysisResult = null
+                selectedFaceIndex = null
                 faces = emptyList() // 새 이미지 선택 시 결과 초기화
             } catch (e: Exception) {
                 // 이미지 로드 실패
@@ -128,7 +134,7 @@ fun PhotoUploadScreen(
             Button(
                 onClick = { imagePickerLauncher.launch("image/*") },
                 modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.buttonColors(containerColor = Color.Blue)
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF007AFF))
             ) {
                 Text("사진 선택", fontSize = 16.sp)
             }
@@ -144,6 +150,8 @@ fun PhotoUploadScreen(
                             try {
                                 val result = photoDrunkDetectionService.detectDrunkLevel(bitmap)
                                 faces = result.faces
+                                analysisResult = result
+                                selectedFaceIndex = if (result.faces.isNotEmpty()) 0 else null
                             } finally {
                                 isAnalyzing = false
                             }
@@ -151,7 +159,7 @@ fun PhotoUploadScreen(
                     },
                     modifier = Modifier.fillMaxWidth(),
                     enabled = !isAnalyzing,
-                    colors = ButtonDefaults.buttonColors(containerColor = Color.Green)
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF34C759))
                 ) {
                     if (isAnalyzing) {
                         CircularProgressIndicator(
@@ -162,6 +170,118 @@ fun PhotoUploadScreen(
                         Text("분석 중...")
                     } else {
                         Text("음주도 분석", fontSize = 16.sp)
+                    }
+                }
+                
+                Spacer(modifier = Modifier.height(12.dp))
+            }
+            
+            // 다중 얼굴 선택 UI
+            if (faces.size > 1) {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFFF0F8FF))
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp)
+                    ) {
+                        Text(
+                            text = "👥 ${faces.size}명이 감지되었습니다. 기록할 사람을 선택하세요:",
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                        
+                        Spacer(modifier = Modifier.height(12.dp))
+                        
+                        faces.forEachIndexed { index, face ->
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 4.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                RadioButton(
+                                    selected = selectedFaceIndex == index,
+                                    onClick = { selectedFaceIndex = index }
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = "${face.personId}: ${face.drunkPercentage}%",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = when {
+                                        face.drunkPercentage < 30 -> Color(0xFF34C759)
+                                        face.drunkPercentage < 60 -> Color(0xFFFF9500)
+                                        else -> Color(0xFFFF3B30)
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
+                
+                Spacer(modifier = Modifier.height(12.dp))
+            }
+            
+            // 분석 결과 및 기록 버튼
+            analysisResult?.let { result ->
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFFF8F8F8))
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp)
+                    ) {
+                        Text(
+                            text = "📊 분석 결과",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                        
+                        Spacer(modifier = Modifier.height(8.dp))
+                        
+                        val selectedFace = selectedFaceIndex?.let { faces.getOrNull(it) }
+                        val displayLevel = selectedFace?.drunkPercentage?.toFloat() ?: result.drunkLevel
+                        
+                        Text(
+                            text = if (faces.size > 1 && selectedFace != null) {
+                                "${selectedFace.personId}: ${selectedFace.drunkPercentage}%"
+                            } else {
+                                "음주도: ${displayLevel.toInt()}%"
+                            },
+                            style = MaterialTheme.typography.headlineSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = when {
+                                displayLevel < 30 -> Color(0xFF34C759)
+                                displayLevel < 60 -> Color(0xFFFF9500)
+                                else -> Color(0xFFFF3B30)
+                            }
+                        )
+                        
+                        Spacer(modifier = Modifier.height(8.dp))
+                        
+                        Text(
+                            text = result.message,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = Color.Gray
+                        )
+                        
+                        Spacer(modifier = Modifier.height(16.dp))
+                        
+                        // 기록 버튼
+                        Button(
+                            onClick = {
+                                onSaveRecord(displayLevel)
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF007AFF))
+                        ) {
+                            Text(
+                                text = "💾 기록하기",
+                                color = Color.White,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 16.sp
+                            )
+                        }
                     }
                 }
                 

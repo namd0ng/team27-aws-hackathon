@@ -35,6 +35,8 @@ fun HomeScreen() {
     var faces by remember { mutableStateOf<List<FaceBox>>(emptyList()) }
     var isAnalyzing by remember { mutableStateOf(false) }
     var isCameraActive by remember { mutableStateOf(false) }
+    var currentDrunkLevel by remember { mutableStateOf<Float?>(null) }
+    var savedRecords by remember { mutableStateOf<List<Pair<String, Float>>>(emptyList()) }
     val realTimeDrunkDetectionService = remember { DrunkDetectionService(context) }
     val photoDrunkDetectionService = remember { PhotoDrunkDetectionService(context) }
     val coroutineScope = rememberCoroutineScope()
@@ -44,7 +46,25 @@ fun HomeScreen() {
         "photo" -> {
             PhotoUploadScreen(
                 photoDrunkDetectionService = photoDrunkDetectionService,
-                onBackToCamera = { currentMode = "home" }
+                onBackToCamera = { currentMode = "home" },
+                onSaveRecord = { level ->
+                    val currentTime = java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault())
+                        .format(java.util.Date())
+                    // 같은 시간대에 기록이 있으면 더 높은 수치로 업데이트
+                    val existingIndex = savedRecords.indexOfFirst { it.first == currentTime }
+                    savedRecords = if (existingIndex >= 0) {
+                        val existingLevel = savedRecords[existingIndex].second
+                        if (level > existingLevel) {
+                            savedRecords.toMutableList().apply { 
+                                set(existingIndex, Pair(currentTime, level)) 
+                            }
+                        } else {
+                            savedRecords
+                        }
+                    } else {
+                        savedRecords + Pair(currentTime, level)
+                    }
+                }
             )
         }
         
@@ -101,6 +121,7 @@ fun HomeScreen() {
                                                 try {
                                                     val result = realTimeDrunkDetectionService.detectDrunkLevel(bitmap)
                                                     faces = result.faces
+                                                    currentDrunkLevel = result.drunkLevel
                                                 } finally {
                                                     isAnalyzing = false
                                                 }
@@ -125,6 +146,25 @@ fun HomeScreen() {
                                             (LocalConfiguration.current.screenWidthDp - 32).dp.toPx()
                                         }
                                     )
+                                }
+                                
+                                // 현재 음주도 표시
+                                currentDrunkLevel?.let { level ->
+                                    Card(
+                                        modifier = Modifier
+                                            .align(Alignment.TopEnd)
+                                            .padding(8.dp),
+                                        colors = CardDefaults.cardColors(
+                                            containerColor = Color.Black.copy(alpha = 0.7f)
+                                        )
+                                    ) {
+                                        Text(
+                                            text = "${level.toInt()}%",
+                                            color = Color.White,
+                                            fontWeight = FontWeight.Bold,
+                                            modifier = Modifier.padding(8.dp)
+                                        )
+                                    }
                                 }
                             }
                         } else {
@@ -163,41 +203,100 @@ fun HomeScreen() {
                 
                 Spacer(modifier = Modifier.height(20.dp))
                 
-                // Capture button
-                Button(
-                    onClick = { 
-                        if (isCameraActive) {
-                            isCameraActive = false
-                        } else if (cameraPermissionState.status == PermissionStatus.Granted) {
-                            isCameraActive = true
-                        } else {
-                            cameraPermissionState.launchPermissionRequest()
-                        }
-                    },
+                // Camera control buttons
+                Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(48.dp)
                         .padding(horizontal = 8.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = if (isCameraActive) Color.Red else Color.Black
-                    ),
-                    shape = RoundedCornerShape(12.dp)
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically
+                    // Camera start/stop button
+                    Button(
+                        onClick = { 
+                            if (isCameraActive) {
+                                isCameraActive = false
+                                currentDrunkLevel = null
+                                faces = emptyList()
+                            } else if (cameraPermissionState.status == PermissionStatus.Granted) {
+                                isCameraActive = true
+                            } else {
+                                cameraPermissionState.launchPermissionRequest()
+                            }
+                        },
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(48.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = if (isCameraActive) Color.Red else Color.Black
+                        ),
+                        shape = RoundedCornerShape(12.dp)
                     ) {
-                        Text(
-                            text = if (isCameraActive) "⏹️" else "📷",
-                            fontSize = 18.sp,
-                            color = Color.White
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = if (isCameraActive) "카메라 중지" else "실시간 카메라 시작",
-                            style = MaterialTheme.typography.bodyLarge,
-                            fontWeight = FontWeight.SemiBold,
-                            color = Color.White
-                        )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = if (isCameraActive) "⏹️" else "📷",
+                                fontSize = 16.sp,
+                                color = Color.White
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = if (isCameraActive) "중지" else "시작",
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.SemiBold,
+                                color = Color.White
+                            )
+                        }
+                    }
+                    
+                    // Save record button
+                    Button(
+                        onClick = {
+                            currentDrunkLevel?.let { level ->
+                                val currentTime = java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault())
+                                    .format(java.util.Date())
+                                // 같은 시간대(분 단위)에 기록이 있으면 더 높은 수치로 업데이트
+                                val existingIndex = savedRecords.indexOfFirst { it.first == currentTime }
+                                savedRecords = if (existingIndex >= 0) {
+                                    val existingLevel = savedRecords[existingIndex].second
+                                    if (level > existingLevel) {
+                                        savedRecords.toMutableList().apply { 
+                                            set(existingIndex, Pair(currentTime, level)) 
+                                        }
+                                    } else {
+                                        savedRecords
+                                    }
+                                } else {
+                                    savedRecords + Pair(currentTime, level)
+                                }
+                            }
+                        },
+                        enabled = currentDrunkLevel != null,
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(48.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFF007AFF),
+                            disabledContainerColor = Color(0xFFE5E5EA)
+                        ),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "💾",
+                                fontSize = 16.sp,
+                                color = Color.White
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = "기록",
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.SemiBold,
+                                color = Color.White
+                            )
+                        }
                     }
                 }
                 
@@ -230,6 +329,57 @@ fun HomeScreen() {
                             fontWeight = FontWeight.SemiBold,
                             color = Color.Black
                         )
+                    }
+                }
+                
+                // Saved records display
+                if (savedRecords.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(20.dp))
+                    
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 8.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color(0xFFF0F8FF)),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(16.dp)
+                        ) {
+                            Text(
+                                text = "📊 오늘의 기록",
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.SemiBold,
+                                color = Color.Black
+                            )
+                            
+                            Spacer(modifier = Modifier.height(12.dp))
+                            
+                            savedRecords.takeLast(3).forEach { (time, level) ->
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Text(
+                                        text = time,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = Color.Black
+                                    )
+                                    Text(
+                                        text = "${level.toInt()}%",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        fontWeight = FontWeight.Bold,
+                                        color = when {
+                                            level < 30 -> Color(0xFF34C759)
+                                            level < 60 -> Color(0xFFFF9500)
+                                            else -> Color(0xFFFF3B30)
+                                        }
+                                    )
+                                }
+                                Spacer(modifier = Modifier.height(4.dp))
+                            }
+                        }
                     }
                 }
                 
