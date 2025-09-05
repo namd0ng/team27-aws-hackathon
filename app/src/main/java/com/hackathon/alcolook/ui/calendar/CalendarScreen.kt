@@ -37,7 +37,7 @@ fun CalendarScreen() {
             modifier = Modifier.padding(16.dp)
         )
         
-        // 탭 행
+        // Tab Row
         TabRow(
             selectedTabIndex = selectedTab,
             modifier = Modifier.fillMaxWidth()
@@ -51,7 +51,7 @@ fun CalendarScreen() {
             }
         }
         
-        // 탭 콘텐츠
+        // Tab Content
         when (selectedTab) {
             0 -> MonthlyCalendarContent()
             1 -> StatisticsContent()
@@ -66,7 +66,7 @@ private fun MonthlyCalendarContent() {
             .fillMaxSize()
             .padding(16.dp)
     ) {
-        // 월 헤더
+        // Month Header
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -84,11 +84,11 @@ private fun MonthlyCalendarContent() {
         
         Spacer(modifier = Modifier.height(16.dp))
         
-        // 캘린더 그리드
+        // Calendar Grid
         val daysOfWeek = listOf("일", "월", "화", "수", "목", "금", "토")
         val daysInMonth = (1..31).toList()
         
-        // 요일 헤더
+        // Days of week header
         LazyVerticalGrid(
             columns = GridCells.Fixed(7),
             modifier = Modifier.fillMaxWidth()
@@ -117,7 +117,7 @@ private fun MonthlyCalendarContent() {
         
         Spacer(modifier = Modifier.height(16.dp))
         
-        // 선택된 날짜 기록
+        // Selected Date Records
         Card(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(12.dp)
@@ -151,7 +151,7 @@ private fun StatisticsContent() {
             .fillMaxSize()
             .padding(16.dp)
     ) {
-        // 기간 토글
+        // Period Toggle
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.Center
@@ -168,7 +168,7 @@ private fun StatisticsContent() {
         
         Spacer(modifier = Modifier.height(24.dp))
         
-        // 캐릭터 코멘트 카드
+        // Character Comment Card
         Card(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(12.dp),
@@ -196,7 +196,7 @@ private fun StatisticsContent() {
         
         Spacer(modifier = Modifier.height(24.dp))
         
-        // 건강 지수 카드
+        // Health Index
         Card(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(12.dp)
@@ -224,7 +224,7 @@ private fun StatisticsContent() {
         
         Spacer(modifier = Modifier.height(16.dp))
         
-        // 주간 트렌드 (간단한 막대 차트)
+        // Weekly Trend (Simple Bar Chart)
         Card(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(12.dp)
@@ -239,7 +239,7 @@ private fun StatisticsContent() {
                 )
                 Spacer(modifier = Modifier.height(12.dp))
                 
-                // 간단한 막대 차트 플레이스홀더
+                // Simple bar chart placeholder
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceEvenly,
@@ -263,7 +263,6 @@ private fun StatisticsContent() {
     }
 }
 
-// 캘린더 날짜 셀 컴포넌트
 @Composable
 private fun CalendarDayCell(
     day: Int,
@@ -290,7 +289,6 @@ private fun CalendarDayCell(
     }
 }
 
-// 건강 상태 배지 컴포넌트
 @Composable
 private fun HealthStatusBadge(
     label: String,
@@ -319,7 +317,6 @@ private fun HealthStatusBadge(
     }
 }
 
-// 음주 상태 열거형
 enum class DrinkingStatus {
     NORMAL, WARNING, DANGER
 }
