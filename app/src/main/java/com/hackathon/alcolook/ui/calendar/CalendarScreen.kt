@@ -684,20 +684,25 @@ private fun StatisticsContent(
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.Center
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             periods.forEachIndexed { index, period ->
                 FilterChip(
                     onClick = { viewModel.selectPeriod(index) },
                     label = { 
-                        Text(
-                            text = period,
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Medium
-                        )
+                        Box(
+                            modifier = Modifier.fillMaxWidth(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = period,
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
                     },
                     selected = selectedPeriod == index,
-                    modifier = Modifier.padding(horizontal = 4.dp),
+                    modifier = Modifier.weight(1f),
                     colors = FilterChipDefaults.filterChipColors(
                         selectedContainerColor = TabSelected.copy(alpha = 0.1f),
                         selectedLabelColor = TabSelected
