@@ -403,7 +403,7 @@ fun SettingsScreen(
                         modifier = Modifier.padding(end = 12.dp)
                     )
                     Text(
-                        text = "이 앱은 의료 목적이 아니며, 운전 판단에 사용하지 마세요.\n모든 데이터는 로컬에 저장되며 외부로 전송되지 않습니다.",
+                        text = "이 앱은 의료 목적이 아니며, 운전 판단에 사용하지 마세요.",
                         style = MaterialTheme.typography.bodySmall,
                         color = TextPrimary,
                         lineHeight = 18.sp
@@ -610,7 +610,6 @@ private fun HelpDialog(
                     • 결과는 혈중알코올농도(BAC) 측정기를 대체하지 않습니다.
                     • 운전 가능 여부 판단에 절대 사용하지 마세요.
                     • 결과는 조명·각도·표정 등 환경에 따라 부정확할 수 있습니다. 오판 책임은 사용자에게 있습니다.
-                    • 이 앱은 온디바이스로 동작하며, 기본적으로 서버 전송을 하지 않습니다. 설정에서 데이터 전체 삭제가 가능합니다.
                     • 응급 상황(알코올 중독 의심, 의식 저하 등)에서는 즉시 지역 응급번호로 연락하거나 의료기관을 이용하세요.
                 """.trimIndent()
                 
