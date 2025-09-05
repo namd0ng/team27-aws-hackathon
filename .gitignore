@@ -13,3 +13,5 @@
 .externalNativeBuild
 .cxx
 local.properties
+# AWS credentials
+app/src/main/assets/aws-credentials.properties
