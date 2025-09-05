@@ -212,29 +212,46 @@ fun SettingsScreen(
                     Spacer(modifier = Modifier.height(16.dp))
                     
                     // 성별 선택
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    var genderExpanded by remember { mutableStateOf(false) }
+                    val genderOptions = listOf("남성", "여성", "설정되지 않음")
+                    
+                    ExposedDropdownMenuBox(
+                        expanded = genderExpanded,
+                        onExpandedChange = { genderExpanded = !genderExpanded }
                     ) {
-                        listOf("남성", "여성", "설정되지 않음").forEach { gender ->
-                            FilterChip(
-                                onClick = { selectedGender = gender },
-                                label = { 
-                                    Text(
-                                        text = gender,
-                                        fontSize = 14.sp,
-                                        fontWeight = FontWeight.Medium
-                                    )
-                                },
-                                selected = selectedGender == gender,
-                                modifier = Modifier.weight(1f),
-                                colors = FilterChipDefaults.filterChipColors(
-                                    selectedContainerColor = TabSelected.copy(alpha = 0.1f),
-                                    selectedLabelColor = TabSelected,
-                                    containerColor = Color.Transparent,
-                                    labelColor = TabUnselected
+                        OutlinedTextField(
+                            value = selectedGender,
+                            onValueChange = {},
+                            readOnly = true,
+                            label = { Text("성별") },
+                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = genderExpanded) },
+                            modifier = Modifier
+                                .menuAnchor()
+                                .fillMaxWidth(),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = TabSelected,
+                                focusedLabelColor = TabSelected
+                            ),
+                            shape = RoundedCornerShape(8.dp)
+                        )
+                        ExposedDropdownMenu(
+                            expanded = genderExpanded,
+                            onDismissRequest = { genderExpanded = false }
+                        ) {
+                            genderOptions.forEach { gender ->
+                                DropdownMenuItem(
+                                    text = { 
+                                        Text(
+                                            text = gender,
+                                            style = MaterialTheme.typography.bodyMedium
+                                        ) 
+                                    },
+                                    onClick = {
+                                        selectedGender = gender
+                                        genderExpanded = false
+                                    }
                                 )
-                            )
+                            }
                         }
                     }
                     
