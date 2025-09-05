@@ -157,6 +157,12 @@ class SimpleCalendarViewModel : ViewModel() {
     fun goToNextMonth() {
         _currentMonth.value = _currentMonth.value.plusMonths(1)
     }
+
+    fun goToDate(year: Int, month: Int, day: Int) {
+        val newDate = LocalDate.of(year, month, day)
+        _selectedDate.value = newDate
+        _currentMonth.value = YearMonth.of(year, month)
+    }
     fun addDrinkRecord(
         type: DrinkType,
         unit: DrinkUnit,

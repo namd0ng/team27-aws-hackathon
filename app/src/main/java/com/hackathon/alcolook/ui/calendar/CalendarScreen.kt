@@ -585,8 +585,7 @@ private fun MonthlyCalendarContent(
             DatePickerDialog(
                 onDismiss = { showDatePicker = false },
                 onDateSelected = { year, month, day ->
-                    val newDate = LocalDate.of(year, month, day)
-                    viewModel.selectDate(newDate)
+                    viewModel.goToDate(year, month, day)
                     showDatePicker = false
                 }
             )
@@ -1193,8 +1192,10 @@ fun DatePickerDialog(
                                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = yearExpanded) },
                                 modifier = Modifier
                                     .menuAnchor()
-                                    .width(80.dp),
-                                colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors()
+                                    .width(92.dp)
+                                    .height(48.dp),
+                                colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(),
+                                textStyle = MaterialTheme.typography.bodySmall
                             )
                             ExposedDropdownMenu(
                                 expanded = yearExpanded,
@@ -1202,7 +1203,12 @@ fun DatePickerDialog(
                             ) {
                                 years.forEach { year ->
                                     DropdownMenuItem(
-                                        text = { Text(year.toString()) },
+                                        text = { 
+                                            Text(
+                                                text = year.toString(),
+                                                style = MaterialTheme.typography.bodyMedium
+                                            ) 
+                                        },
                                         onClick = {
                                             selectedYear = year
                                             yearExpanded = false
@@ -1232,8 +1238,10 @@ fun DatePickerDialog(
                                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = monthExpanded) },
                                 modifier = Modifier
                                     .menuAnchor()
-                                    .width(70.dp),
-                                colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors()
+                                    .width(72.dp)
+                                    .height(48.dp),
+                                colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(),
+                                textStyle = MaterialTheme.typography.bodySmall
                             )
                             ExposedDropdownMenu(
                                 expanded = monthExpanded,
@@ -1241,7 +1249,12 @@ fun DatePickerDialog(
                             ) {
                                 months.forEach { month ->
                                     DropdownMenuItem(
-                                        text = { Text(month.toString()) },
+                                        text = { 
+                                            Text(
+                                                text = month.toString(),
+                                                style = MaterialTheme.typography.bodyMedium
+                                            ) 
+                                        },
                                         onClick = {
                                             selectedMonth = month
                                             monthExpanded = false
@@ -1271,8 +1284,10 @@ fun DatePickerDialog(
                                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = dayExpanded) },
                                 modifier = Modifier
                                     .menuAnchor()
-                                    .width(70.dp),
-                                colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors()
+                                    .width(72.dp)
+                                    .height(48.dp),
+                                colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(),
+                                textStyle = MaterialTheme.typography.bodySmall
                             )
                             ExposedDropdownMenu(
                                 expanded = dayExpanded,
@@ -1280,7 +1295,12 @@ fun DatePickerDialog(
                             ) {
                                 days.forEach { day ->
                                     DropdownMenuItem(
-                                        text = { Text(day.toString()) },
+                                        text = { 
+                                            Text(
+                                                text = day.toString(),
+                                                style = MaterialTheme.typography.bodyMedium
+                                            ) 
+                                        },
                                         onClick = {
                                             selectedDay = day
                                             dayExpanded = false
