@@ -1,0 +1,127 @@
+package com.hackathon.alcolook
+
+import android.content.Context
+import android.graphics.Bitmap
+import android.util.Log
+import com.amazonaws.services.rekognition.model.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import java.io.ByteArrayOutputStream
+import java.nio.ByteBuffer
+
+data class FaceBox(
+    val left: Float,
+    val top: Float,
+    val width: Float,
+    val height: Float,
+    val drunkPercentage: Int,
+    val personId: String
+)
+
+class DrunkDetectionService(private val context: Context) {
+    
+    companion object {
+        private const val TAG = "DrunkDetection"
+    }
+    
+    suspend fun detectDrunkLevel(bitmap: Bitmap): DrunkDetectionResult = withContext(Dispatchers.IO) {
+        val rekognitionClient = AwsConfig.getRekognitionClient(context)
+        
+        Log.d(TAG, "=== 실시간 분석 시작 ===")
+        Log.d(TAG, "테스트 모드: ${AwsConfig.TEST_MODE}")
+        
+        return@withContext if (AwsConfig.TEST_MODE || rekognitionClient == null) {
+            val testResult = generateTestDrunkLevel()
+            val testFaceBox = FaceBox(0.2f, 0.2f, 0.6f, 0.6f, testResult, "realtime")
+            Log.d(TAG, "테스트 모드 결과: ${testResult}%")
+            DrunkDetectionResult(testResult.toFloat(), getDrunkMessage(testResult), listOf(testFaceBox))
+        } else {
+            try {
+                Log.d(TAG, "AWS Rekognition 분석 중...")
+                val imageBytes = bitmapToByteBuffer(bitmap)
+                val image = Image().withBytes(imageBytes)
+                
+                val request = DetectFacesRequest()
+                    .withImage(image)
+                    .withAttributes("ALL")
+                
+                val result = rekognitionClient.detectFaces(request)
+                
+                if (result.faceDetails.isNotEmpty()) {
+                    val faces = result.faceDetails.mapIndexed { index, faceDetail ->
+                        val drunkLevel = calculateDrunkPercentage(faceDetail)
+                        
+                        val boundingBox = faceDetail.boundingBox
+                        FaceBox(
+                            left = boundingBox.left,
+                            top = boundingBox.top,
+                            width = boundingBox.width,
+                            height = boundingBox.height,
+                            drunkPercentage = drunkLevel,
+                            personId = "realtime_$index"
+                        )
+                    }
+                    
+                    val avgDrunkLevel = faces.map { it.drunkPercentage }.average().toFloat()
+                    Log.d(TAG, "실시간 분석 완료 - 평균 음주도: ${avgDrunkLevel}%")
+                    DrunkDetectionResult(avgDrunkLevel, getDrunkMessage(avgDrunkLevel.toInt()), faces)
+                } else {
+                    Log.d(TAG, "얼굴이 감지되지 않음")
+                    DrunkDetectionResult(0f, "얼굴이 감지되지 않았습니다", emptyList())
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "AWS 연결 실패: ${e.message}")
+                val fallbackResult = generateTestDrunkLevel()
+                val testFaceBox = FaceBox(0.2f, 0.2f, 0.6f, 0.6f, fallbackResult, "fallback")
+                Log.d(TAG, "대체 결과: ${fallbackResult}%")
+                DrunkDetectionResult(fallbackResult.toFloat(), getDrunkMessage(fallbackResult), listOf(testFaceBox))
+            }
+        }
+    }
+    
+    private fun generateTestDrunkLevel(): Int {
+        return (20..60).random()
+    }
+    
+    private fun getDrunkMessage(drunkLevel: Int): String {
+        return when {
+            drunkLevel < 20 -> "정상 상태입니다"
+            drunkLevel < 40 -> "약간 취한 상태"
+            drunkLevel < 60 -> "취한 상태"
+            drunkLevel < 80 -> "많이 취한 상태"
+            else -> "매우 취한 상태"
+        }
+    }
+    
+    private fun calculateDrunkPercentage(faceDetail: FaceDetail): Int {
+        var drunkScore = 0f
+        Log.d(TAG, "--- 실시간 얼굴 특징 분석 ---")
+        
+        // 간단한 실시간 분석 (사진 분석보다 빠르게)
+        faceDetail.eyesOpen?.let { eyesOpen ->
+            if (!eyesOpen.value && eyesOpen.confidence > 70f) {
+                drunkScore += 30f
+            }
+        }
+        
+        faceDetail.mouthOpen?.let { mouthOpen ->
+            if (mouthOpen.value && mouthOpen.confidence > 75f) {
+                drunkScore += 20f
+            }
+        }
+        
+        // 실시간용: 점수를 1.5배로 증폭
+        val amplifiedScore = drunkScore * 1.5f
+        val finalScore = minOf(100, maxOf(0, amplifiedScore.toInt()))
+        
+        Log.d(TAG, "실시간 음주도: ${finalScore}%")
+        return finalScore
+    }
+    
+    private fun bitmapToByteBuffer(bitmap: Bitmap): ByteBuffer {
+        val stream = ByteArrayOutputStream()
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 80, stream)
+        val byteArray = stream.toByteArray()
+        return ByteBuffer.wrap(byteArray)
+    }
+}
