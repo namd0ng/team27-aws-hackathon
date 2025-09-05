@@ -6,12 +6,40 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.hackathon.alcolook.data.AuthManager
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsScreen() {
+fun SettingsScreen(
+    onLoginClick: () -> Unit = {}
+) {
+    val context = LocalContext.current
+    val authManager = remember { AuthManager.getInstance(context) }
+    val isLoggedIn by authManager.isLoggedIn.collectAsState()
+    val userName by authManager.userName.collectAsState()
+    
+    var isInitialized by remember { mutableStateOf(false) }
+    
+    // 초기화 완료 후에만 UI 표시
+    LaunchedEffect(Unit) {
+        kotlinx.coroutines.delay(100) // 짧은 지연으로 상태 로딩 대기
+        isInitialized = true
+    }
+    
+    if (!isInitialized) {
+        // 로딩 중
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            CircularProgressIndicator()
+        }
+        return
+    }
+    
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -25,6 +53,54 @@ fun SettingsScreen() {
             modifier = Modifier.padding(bottom = 24.dp)
         )
         
+        // Account Section
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(12.dp)
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp)
+            ) {
+                Text(
+                    text = "계정",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+                
+                if (isLoggedIn) {
+                    // 로그인된 상태
+                    Text(
+                        text = "안녕하세요, ${userName ?: "사용자"}님!",
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
+                    Button(
+                        onClick = { authManager.logout() },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.error
+                        )
+                    ) {
+                        Text("로그아웃")
+                    }
+                } else {
+                    // 로그인되지 않은 상태
+                    Button(
+                        onClick = onLoginClick,
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primary
+                        )
+                    ) {
+                        Text("로그인")
+                    }
+                }
+            }
+        }
+        
+        Spacer(modifier = Modifier.height(16.dp))
+
         // Profile Section
         Card(
             modifier = Modifier.fillMaxWidth(),
