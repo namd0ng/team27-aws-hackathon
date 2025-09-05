@@ -22,7 +22,7 @@ class DrunkDetectionService {
                 
                 val request = DetectFacesRequest()
                     .withImage(image)
-                    .withAttributes(Attribute.ALL)
+                    .withAttributes("ALL")
                 
                 val result = rekognitionClient.detectFaces(request)
                 
