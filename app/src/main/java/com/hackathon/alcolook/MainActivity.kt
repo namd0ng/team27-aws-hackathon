@@ -24,16 +24,31 @@ import androidx.compose.ui.unit.sp
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.PermissionStatus
 import com.google.accompanist.permissions.rememberPermissionState
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.ui.Modifier
+import androidx.core.view.WindowCompat
+import com.hackathon.alcolook.ui.navigation.AlcoLookNavigation
 import com.hackathon.alcolook.ui.theme.AlcoLookTheme
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        
+        // Disable system ActionBar
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+        
         enableEdgeToEdge()
         setContent {
             AlcoLookTheme {
-                DrunkDetectionScreen()
+              Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    color = MaterialTheme.colorScheme.background
+                ) {
+                    AlcoLookNavigation()
+                }
             }
         }
     }

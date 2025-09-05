@@ -1,5 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-
-    <style name="Theme.AlcoLook" parent="android:Theme.Material.Light.NoActionBar" />
+    <!-- Empty - Using Compose Material 3 theme only -->
 </resources>
