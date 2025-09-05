@@ -13,3 +13,10 @@
 .externalNativeBuild
 .cxx
 local.properties
+# Test datasets and analysis results
+drunk-images/
+test-images/
+analysis-results/
+*.log
+batch-analysis-*.txt
+test-results-*.json

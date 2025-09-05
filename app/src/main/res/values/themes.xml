@@ -4,3 +4,7 @@
         <!-- Customize your theme here. -->
     </style>
 </resources>
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Empty - Using Compose Material 3 theme only -->
+</resources>
