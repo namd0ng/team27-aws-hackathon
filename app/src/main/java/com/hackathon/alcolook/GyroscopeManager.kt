@@ -5,161 +5,133 @@ import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
+import android.util.Log
 import kotlin.math.abs
 import kotlin.math.sqrt
 
-class GyroscopeManager(context: Context) : SensorEventListener {
+class GyroscopeManager(private val context: Context) : SensorEventListener {
     
     private val sensorManager = context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
-    private val gyroscope = sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE)
-    
-    private val _walkingData = MutableStateFlow(WalkingTestData())
-    val walkingData: StateFlow<WalkingTestData> = _walkingData
+    private val gyroscopeSensor = sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE)
     
     private var isRecording = false
-    private var startTime = 0L
-    private val gyroReadings = mutableListOf<GyroReading>()
+    private val gyroData = mutableListOf<GyroReading>()
+    private var onResultCallback: ((WalkingTestResult) -> Unit)? = null
     
-    fun isGyroscopeAvailable(): Boolean {
-        return gyroscope != null
-    }
+    // 보행 불안정성 감지 임계값
+    private val instabilityThreshold = 2.0f // 각속도 임계값 (rad/s)
+    private val minRecordingTime = 5000L // 최소 측정 시간 (5초)
+    private var recordingStartTime = 0L
     
-    fun startTest() {
-        if (gyroscope != null) {
-            isRecording = true
-            startTime = System.currentTimeMillis()
-            gyroReadings.clear()
-            
-            // 공식 문서 권장: SENSOR_DELAY_GAME (20ms)
-            val success = sensorManager.registerListener(
-                this, 
-                gyroscope, 
-                SensorManager.SENSOR_DELAY_GAME
-            )
-            
-            if (success) {
-                _walkingData.value = WalkingTestData(
-                    isRecording = true,
-                    phase = TestPhase.FIRST_10_STEPS
-                )
-            }
+    fun startRecording(callback: (WalkingTestResult) -> Unit) {
+        if (gyroscopeSensor == null) {
+            Log.e("GyroscopeManager", "자이로스코프 센서를 찾을 수 없습니다")
+            callback(WalkingTestResult.ERROR)
+            return
         }
+        
+        isRecording = true
+        gyroData.clear()
+        onResultCallback = callback
+        recordingStartTime = System.currentTimeMillis()
+        
+        sensorManager.registerListener(this, gyroscopeSensor, SensorManager.SENSOR_DELAY_GAME)
+        Log.d("GyroscopeManager", "자이로스코프 측정 시작")
     }
     
-    fun stopTest() {
+    fun stopRecording() {
+        if (!isRecording) return
+        
         isRecording = false
         sensorManager.unregisterListener(this)
         
-        val score = calculateScore()
-        _walkingData.value = _walkingData.value.copy(
-            isRecording = false,
-            score = score,
-            phase = TestPhase.COMPLETED
-        )
-    }
-    
-    fun nextPhase() {
-        val currentPhase = _walkingData.value.phase
-        val nextPhase = when (currentPhase) {
-            TestPhase.FIRST_10_STEPS -> TestPhase.TURN
-            TestPhase.TURN -> TestPhase.SECOND_10_STEPS
-            TestPhase.SECOND_10_STEPS -> TestPhase.COMPLETED
-            else -> TestPhase.COMPLETED
+        val recordingDuration = System.currentTimeMillis() - recordingStartTime
+        if (recordingDuration < minRecordingTime) {
+            Log.w("GyroscopeManager", "측정 시간이 너무 짧습니다: ${recordingDuration}ms")
+            onResultCallback?.invoke(WalkingTestResult.INSUFFICIENT_DATA)
+            return
         }
         
-        _walkingData.value = _walkingData.value.copy(phase = nextPhase)
+        val result = analyzeWalkingStability()
+        Log.d("GyroscopeManager", "보행 분석 결과: $result")
+        onResultCallback?.invoke(result)
     }
     
     override fun onSensorChanged(event: SensorEvent?) {
         if (!isRecording || event?.sensor?.type != Sensor.TYPE_GYROSCOPE) return
         
-        // 공식 문서: 자이로스코프 값은 rad/s 단위
-        val x = event.values[0] // X축 회전 속도 (pitch)
-        val y = event.values[1] // Y축 회전 속도 (roll) 
-        val z = event.values[2] // Z축 회전 속도 (yaw)
+        val x = event.values[0]
+        val y = event.values[1] 
+        val z = event.values[2]
         
-        val timestamp = System.currentTimeMillis() - startTime
-        gyroReadings.add(GyroReading(x, y, z, timestamp))
+        val magnitude = sqrt(x * x + y * y + z * z)
+        val timestamp = System.currentTimeMillis()
         
-        // 실시간 불안정성 계산 (수평 변화 중심)
-        val instability = calculateInstability(x, y, z)
-        _walkingData.value = _walkingData.value.copy(
-            currentInstability = instability,
-            duration = timestamp
-        )
+        gyroData.add(GyroReading(x, y, z, magnitude, timestamp))
+        
+        Log.d("GyroscopeManager", "자이로 데이터: x=$x, y=$y, z=$z, magnitude=$magnitude")
     }
     
     override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
-        // 정확도 변화 처리 (필요시)
+        // 정확도 변경 시 처리 (필요시)
     }
     
-    private fun calculateInstability(x: Float, y: Float, z: Float): Float {
-        // 수평 불안정성: X(pitch)와 Y(roll) 축의 회전 속도
-        // Z축(yaw)은 의도적 회전이므로 가중치 낮게
-        return sqrt(x * x + y * y + (z * z * 0.3f))
-    }
-    
-    private fun calculateScore(): Int {
-        if (gyroReadings.isEmpty()) return 0
-        
-        // 각 단계별 불안정성 계산
-        val totalDuration = gyroReadings.last().timestamp
-        val firstPhaseEnd = totalDuration * 0.4f
-        val turnPhaseEnd = totalDuration * 0.6f
-        
-        val firstPhaseReadings = gyroReadings.filter { it.timestamp <= firstPhaseEnd }
-        val turnPhaseReadings = gyroReadings.filter { 
-            it.timestamp > firstPhaseEnd && it.timestamp <= turnPhaseEnd 
-        }
-        val secondPhaseReadings = gyroReadings.filter { it.timestamp > turnPhaseEnd }
-        
-        val firstPhaseScore = calculatePhaseScore(firstPhaseReadings)
-        val turnPhaseScore = calculatePhaseScore(turnPhaseReadings) * 0.5f // 턴은 가중치 낮게
-        val secondPhaseScore = calculatePhaseScore(secondPhaseReadings)
-        
-        val totalScore = (firstPhaseScore + turnPhaseScore + secondPhaseScore) / 2.5f
-        
-        // 100점 만점으로 변환 (불안정성이 낮을수록 높은 점수)
-        // 공식 문서 기준: 일반적으로 0.1 rad/s 이하가 안정적
-        val normalizedScore = (1.0f - (totalScore / 0.5f).coerceAtMost(1.0f)) * 100
-        return normalizedScore.toInt().coerceIn(0, 100)
-    }
-    
-    private fun calculatePhaseScore(readings: List<GyroReading>): Float {
-        if (readings.isEmpty()) return 0f
-        
-        val instabilities = readings.map { 
-            calculateInstability(it.x, it.y, it.z) 
+    private fun analyzeWalkingStability(): WalkingTestResult {
+        if (gyroData.isEmpty()) {
+            return WalkingTestResult.INSUFFICIENT_DATA
         }
         
-        return instabilities.average().toFloat()
+        // 불안정한 움직임 감지
+        val instableReadings = gyroData.count { it.magnitude > instabilityThreshold }
+        val instabilityRatio = instableReadings.toFloat() / gyroData.size
+        
+        // 급격한 방향 변화 감지
+        val suddenChanges = detectSuddenChanges()
+        
+        Log.d("GyroscopeManager", "총 데이터: ${gyroData.size}, 불안정 비율: $instabilityRatio, 급격한 변화: $suddenChanges")
+        
+        return when {
+            instabilityRatio > 0.3f || suddenChanges > 10 -> WalkingTestResult.UNSTABLE
+            instabilityRatio > 0.15f || suddenChanges > 5 -> WalkingTestResult.SLIGHTLY_UNSTABLE
+            else -> WalkingTestResult.STABLE
+        }
     }
     
-    fun cleanup() {
-        if (isRecording) {
-            sensorManager.unregisterListener(this)
-            isRecording = false
+    private fun detectSuddenChanges(): Int {
+        if (gyroData.size < 2) return 0
+        
+        var suddenChanges = 0
+        val changeThreshold = 1.5f
+        
+        for (i in 1 until gyroData.size) {
+            val prev = gyroData[i - 1]
+            val curr = gyroData[i]
+            
+            val deltaX = abs(curr.x - prev.x)
+            val deltaY = abs(curr.y - prev.y)
+            val deltaZ = abs(curr.z - prev.z)
+            
+            if (deltaX > changeThreshold || deltaY > changeThreshold || deltaZ > changeThreshold) {
+                suddenChanges++
+            }
         }
+        
+        return suddenChanges
     }
 }
 
-data class WalkingTestData(
-    val isRecording: Boolean = false,
-    val phase: TestPhase = TestPhase.READY,
-    val currentInstability: Float = 0f,
-    val duration: Long = 0L,
-    val score: Int = 0
-)
-
 data class GyroReading(
-    val x: Float, // rad/s
-    val y: Float, // rad/s
-    val z: Float, // rad/s
+    val x: Float,
+    val y: Float,
+    val z: Float,
+    val magnitude: Float,
     val timestamp: Long
 )
 
-enum class TestPhase {
-    READY, FIRST_10_STEPS, TURN, SECOND_10_STEPS, COMPLETED
+enum class WalkingTestResult {
+    STABLE,           // 안정적인 보행
+    SLIGHTLY_UNSTABLE, // 약간 불안정
+    UNSTABLE,         // 불안정한 보행
+    INSUFFICIENT_DATA, // 데이터 부족
+    ERROR             // 센서 오류
 }

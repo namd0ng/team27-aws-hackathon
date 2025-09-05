@@ -110,8 +110,3 @@ class HealthConnectManager(private val context: Context) {
         }
     }
 }
-
-data class HeartRateData(
-    val bpm: Long,
-    val timestamp: Instant
-)
