@@ -299,3 +299,5 @@ class BedrockAnalysisService(private val context: Context) {
         }
     }
 }
+
+// 이게 최신 제일 최신이에요 ㅠㅠㅠㅠ
