@@ -11,6 +11,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -20,13 +21,57 @@ import com.hackathon.alcolook.R
 import com.hackathon.alcolook.ui.components.DropdownSettingsItem
 import com.hackathon.alcolook.ui.components.rememberSettingsState
 import com.hackathon.alcolook.ui.theme.*
+import com.hackathon.alcolook.data.AuthManager
+import com.hackathon.alcolook.data.repository.DynamoDBProfileRepository
+import kotlinx.coroutines.launch
 
 /**
- * 설정 화면 - 스크린샷과 정확히 일치하는 디자인
+ * 설정 화면 - UI와 기능 통합
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsScreen() {
+fun SettingsScreen(
+    onLoginClick: () -> Unit = {}
+) {
+    val context = LocalContext.current
+    val authManager = remember { AuthManager.getInstance(context) }
+    val profileRepository = remember { DynamoDBProfileRepository(authManager) }
+    val isLoggedIn by authManager.isLoggedIn.collectAsState()
+    val userName by authManager.userName.collectAsState()
+    
+    // UI 상태 관리
     var showHelpDialog by remember { mutableStateOf(false) }
+    var showSaveDialog by remember { mutableStateOf(false) }
+    var saveMessage by remember { mutableStateOf("") }
+    
+    val genderState = rememberSettingsState(stringResource(R.string.gender_male))
+    val ageInputState = rememberSettingsState("")
+    val weeklyGoalInputState = rememberSettingsState("")
+    val themeState = rememberSettingsState(stringResource(R.string.theme_system))
+    
+    val scope = rememberCoroutineScope()
+    
+    // DynamoDB에서 프로필 로드
+    LaunchedEffect(isLoggedIn) {
+        if (isLoggedIn) {
+            profileRepository.loadProfile { success, profile ->
+                if (success && profile != null) {
+                    genderState.value = when(profile.sex) {
+                        "MALE" -> context.getString(R.string.gender_male)
+                        "FEMALE" -> context.getString(R.string.gender_female)
+                        else -> "설정되지 않음"
+                    }
+                    ageInputState.value = profile.age?.toString() ?: ""
+                    weeklyGoalInputState.value = profile.weeklyGoalStdDrinks?.toString() ?: ""
+                }
+            }
+        } else {
+            // 로그아웃 상태면 초기화
+            genderState.value = "설정되지 않음"
+            ageInputState.value = ""
+            weeklyGoalInputState.value = ""
+        }
+    }
     
     Column(
         modifier = Modifier
@@ -51,8 +96,24 @@ fun SettingsScreen() {
         
         Spacer(modifier = Modifier.height(16.dp))
         
-        // 개인 정보 섹션
-        PersonalInfoSection()
+        // 계정 섹션
+        AccountSection(
+            isLoggedIn = isLoggedIn,
+            userName = userName,
+            onLoginClick = onLoginClick,
+            onLogoutClick = { authManager.logout() }
+        )
+        
+        Spacer(modifier = Modifier.height(16.dp))
+        
+        // 개인 정보 섹션 (기존 alldata+calendar)
+        PersonalInfoSection(
+            genderState = genderState,
+            ageInputState = ageInputState,
+            weeklyGoalInputState = weeklyGoalInputState,
+            themeState = themeState,
+            onSaveClick = { showSaveDialog = true }
+        )
         
         Spacer(modifier = Modifier.height(16.dp))
         
@@ -69,7 +130,43 @@ fun SettingsScreen() {
         Spacer(modifier = Modifier.height(100.dp))
     }
     
-    // 도움말 다이얼로그
+    // 프로필 저장 확인 다이얼로그 (develop)
+    if (showSaveDialog) {
+        SaveProfileDialog(
+            gender = genderState.value,
+            age = ageInputState.value,
+            weeklyGoal = weeklyGoalInputState.value,
+            onDismiss = { showSaveDialog = false },
+            onConfirm = {
+                scope.launch {
+                    val genderValue = when(genderState.value) {
+                        context.getString(R.string.gender_male) -> "MALE"
+                        context.getString(R.string.gender_female) -> "FEMALE"
+                        else -> "UNSET"
+                    }
+                    val ageValue = ageInputState.value.toIntOrNull()
+                    val goalValue = weeklyGoalInputState.value.toIntOrNull()
+                    
+                    if (!isLoggedIn || authManager.getUserId() == null) {
+                        saveMessage = "로그인이 필요합니다"
+                        showSaveDialog = false
+                        return@launch
+                    }
+                    
+                    profileRepository.saveProfile(genderValue, ageValue, goalValue) { success, message ->
+                        if (success) {
+                            saveMessage = "프로필이 저장되었습니다!"
+                        } else {
+                            saveMessage = "저장 실패: $message"
+                        }
+                    }
+                    showSaveDialog = false
+                }
+            }
+        )
+    }
+
+    // 도움말 다이얼로그 (alldata+calendar)
     if (showHelpDialog) {
         HelpDialog(
             onDismiss = { showHelpDialog = false }
@@ -78,12 +175,68 @@ fun SettingsScreen() {
 }
 
 @Composable
-private fun PersonalInfoSection() {
-    val genderState = rememberSettingsState(stringResource(R.string.gender_male))
-    val ageGroupState = rememberSettingsState(stringResource(R.string.age_30s))
-    val weeklyGoalState = rememberSettingsState(stringResource(R.string.goal_recommended))
-    val themeState = rememberSettingsState(stringResource(R.string.theme_system))
-    
+private fun AccountSection(
+    isLoggedIn: Boolean,
+    userName: String?,
+    onLoginClick: () -> Unit,
+    onLogoutClick: () -> Unit
+) {
+    Column(modifier = Modifier.padding(horizontal = 16.dp)) {
+        Text(
+            text = "계정",
+            modifier = Modifier.padding(vertical = 8.dp),
+            style = MaterialTheme.typography.titleMedium,
+            color = Color.Gray
+        )
+        
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(containerColor = Color.White),
+            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+            shape = RoundedCornerShape(16.dp)
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp)
+            ) {
+                if (isLoggedIn) {
+                    Text(
+                        text = "안녕하세요, ${userName ?: "사용자"}님!",
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = FontWeight.Medium,
+                        color = Color.Black,
+                        modifier = Modifier.padding(bottom = 12.dp)
+                    )
+                    Button(
+                        onClick = onLogoutClick,
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        Text(text = "로그아웃", fontWeight = FontWeight.Medium, color = Color.White)
+                    }
+                } else {
+                    Button(
+                        onClick = onLoginClick,
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color.Black),
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        Text(text = "로그인", color = Color.White, fontWeight = FontWeight.Medium)
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun PersonalInfoSection(
+    genderState: MutableState<String>,
+    ageInputState: MutableState<String>,
+    weeklyGoalInputState: MutableState<String>,
+    themeState: MutableState<String>,
+    onSaveClick: () -> Unit
+) {
     Column {
         Text(
             text = "개인 정보",
@@ -91,7 +244,6 @@ private fun PersonalInfoSection() {
             style = MaterialTheme.typography.titleMedium,
             color = Color.Gray
         )
-        
         Card(
             modifier = Modifier
                 .fillMaxWidth()
@@ -100,74 +252,58 @@ private fun PersonalInfoSection() {
             elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
             shape = RoundedCornerShape(16.dp)
         ) {
-            Column {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
                 DropdownSettingsItem(
                     emoji = "👤",
                     title = "성별",
                     options = listOf(
                         stringResource(R.string.gender_male),
-                        stringResource(R.string.gender_female)
+                        stringResource(R.string.gender_female),
+                        "설정되지 않음"
                     ),
                     selectedValue = genderState.value,
                     onValueChange = { genderState.value = it }
                 )
                 
-                HorizontalDivider(
-                    color = Color(0xFFE0E0E0),
-                    thickness = 0.5.dp,
-                    modifier = Modifier.padding(horizontal = 16.dp)
-                )
-                
-                DropdownSettingsItem(
-                    emoji = "🎂",
-                    title = "연령대",
-                    options = listOf(
-                        stringResource(R.string.age_20s),
-                        stringResource(R.string.age_30s),
-                        stringResource(R.string.age_40s),
-                        stringResource(R.string.age_50s),
-                        stringResource(R.string.age_60_64),
-                        stringResource(R.string.age_65_plus)
+                OutlinedTextField(
+                    value = ageInputState.value,
+                    onValueChange = { ageInputState.value = it },
+                    label = { Text("연령") },
+                    placeholder = { Text("나이를 입력하세요") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = TabSelected,
+                        focusedLabelColor = TabSelected
                     ),
-                    selectedValue = ageGroupState.value,
-                    onValueChange = { ageGroupState.value = it }
+                    shape = RoundedCornerShape(8.dp)
                 )
                 
-                HorizontalDivider(
-                    color = Color(0xFFE0E0E0),
-                    thickness = 0.5.dp,
-                    modifier = Modifier.padding(horizontal = 16.dp)
-                )
-                
-                DropdownSettingsItem(
-                    emoji = "🏁",
-                    title = "주간 목표",
-                    options = listOf(
-                        stringResource(R.string.goal_recommended),
-                        stringResource(R.string.goal_low_risk),
-                        stringResource(R.string.goal_maximum)
+                OutlinedTextField(
+                    value = weeklyGoalInputState.value,
+                    onValueChange = { weeklyGoalInputState.value = it },
+                    label = { Text("주간 목표 (잔)") },
+                    placeholder = { Text("주간 목표 잔수를 입력하세요") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = TabSelected,
+                        focusedLabelColor = TabSelected
                     ),
-                    selectedValue = weeklyGoalState.value,
-                    onValueChange = { weeklyGoalState.value = it }
+                    shape = RoundedCornerShape(8.dp)
                 )
-                
-                HorizontalDivider(
-                    color = Color(0xFFE0E0E0),
-                    thickness = 0.5.dp,
-                    modifier = Modifier.padding(horizontal = 16.dp)
-                )
-                
-                DropdownSettingsItem(
-                    emoji = "🎨",
-                    title = "테마 설정",
-                    options = listOf(
-                        stringResource(R.string.theme_system),
-                        stringResource(R.string.theme_dark),
-                        stringResource(R.string.theme_light)
-                    ),
-                    selectedValue = themeState.value,
-                    onValueChange = { themeState.value = it }
-                )
+
+                Button(
+                    onClick = onSaveClick,
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.Black),
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Text(text = "프로필 저장", color = Color.White, fontWeight = FontWeight.Medium)
+                }
             }
         }
     }
@@ -182,7 +318,6 @@ private fun DataManagementSection() {
             style = MaterialTheme.typography.titleMedium,
             color = Color.Gray
         )
-        
         Card(
             modifier = Modifier
                 .fillMaxWidth()
@@ -227,7 +362,6 @@ private fun AppInfoSection(
             style = MaterialTheme.typography.titleMedium,
             color = Color.Gray
         )
-        
         Card(
             modifier = Modifier
                 .fillMaxWidth()
@@ -262,98 +396,10 @@ private fun AppInfoSection(
 }
 
 @Composable
-private fun HelpDialog(
-    onDismiss: () -> Unit
-) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = {
-            Text(
-                text = "도움말 및 면책 사항",
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold,
-                color = Color.Black
-            )
-        },
-        text = {
-            Column(
-                modifier = Modifier.verticalScroll(rememberScrollState())
-            ) {
-                Text(
-                    text = "사용 안내",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    color = Color(0xFF2196F3)
-                )
-                
-                Spacer(modifier = Modifier.height(8.dp))
-                
-                Text(
-                    text = "본격 결과는 참고 지표입니다.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = Color.Black
-                )
-                
-                Spacer(modifier = Modifier.height(16.dp))
-                
-                Text(
-                    text = "법적 고지 및 면책",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    color = Color(0xFF2196F3)
-                )
-                
-                Spacer(modifier = Modifier.height(8.dp))
-                
-                val disclaimerText = """
-                    • 이 앱은 의료기기/진단 도구가 아닙니다. 질병의 진단·치료·예방 목적에 사용할 수 없습니다.
-                    • 결과는 혈중알코올농도(BAC) 측정기를 대체하지 않습니다.
-                    • 운전 가능 여부 판단에 절대 사용하지 마세요.
-                    • 결과는 조명·각도·표정 등 환경에 따라 부정확할 수 있습니다. 오판 책임은 사용자에게 있습니다.
-                    • 이 앱은 온디바이스로 동작하며, 기본적으로 서버 전송을 하지 않습니다. 설정에서 데이터 전체 삭제가 가능합니다.
-                    • 응급 상황(알코올 중독 의심, 의식 저하 등)에서는 즉시 지역 응급번호로 연락하거나 의료기관을 이용하세요.
-                """.trimIndent()
-                
-                Text(
-                    text = disclaimerText,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = Color.Black,
-                    lineHeight = 18.sp
-                )
-                
-                Spacer(modifier = Modifier.height(16.dp))
-                
-                Text(
-                    text = "데이터 관리: 설정 > 데이터 관리",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = Color.Gray
-                )
-            }
-        },
-        confirmButton = {
-            TextButton(
-                onClick = onDismiss,
-                colors = ButtonDefaults.textButtonColors(
-                    contentColor = Color(0xFF2196F3)
-                )
-            ) {
-                Text(
-                    text = "확인",
-                    fontWeight = FontWeight.Medium
-                )
-            }
-        },
-        containerColor = Color.White,
-        shape = RoundedCornerShape(16.dp)
-    )
-}
-
-@Composable
 private fun SettingsItem(
     icon: String,
     title: String,
     subtitle: String? = null,
-    value: String? = null,
     onClick: () -> Unit
 ) {
     Row(
@@ -390,33 +436,173 @@ private fun SettingsItem(
             }
         }
         
-        if (value != null) {
-            Surface(
-                color = Color(0xFFE0E0E0),
-                shape = RoundedCornerShape(20.dp)
-            ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = value,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = Color.Black
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(
-                        text = "▼",
-                        fontSize = 10.sp,
-                        color = Color.Gray
-                    )
-                }
-            }
-        } else {
+        Text(
+            text = "▶",
+            fontSize = 16.sp,
+            color = Color.Gray
+        )
+    }
+}
+
+@Composable
+private fun SaveProfileDialog(
+    gender: String,
+    age: String,
+    weeklyGoal: String,
+    onDismiss: () -> Unit,
+    onConfirm: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
             Text(
-                text = "▶",
-                fontSize = 16.sp,
-                color = Color.Gray
+                text = "프로필 저장",
+                fontWeight = FontWeight.SemiBold
+            )
+        },
+        text = {
+            Text("프로필 정보를 저장하시겠습니까?\n\n성별: $gender\n연령: ${age.ifEmpty { "미입력" }}\n주간 목표: ${weeklyGoal.ifEmpty { "미입력" }}잔")
+        },
+        confirmButton = {
+            Button(
+                onClick = onConfirm,
+                colors = ButtonDefaults.buttonColors(containerColor = Color.Black),
+                shape = RoundedCornerShape(8.dp)
+            ) {
+                Text(text = "저장", color = Color.White, fontWeight = FontWeight.Medium)
+            }
+        },
+        dismissButton = {
+            OutlinedButton(
+                onClick = onDismiss,
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = TextSecondary),
+                shape = RoundedCornerShape(8.dp)
+            ) {
+                Text("취소")
+            }
+        },
+        shape = RoundedCornerShape(16.dp)
+    )
+}
+
+@Composable
+private fun HelpDialog(
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(
+                text = "도움말 및 면책 사항",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+                color = Color.Black
+            )
+        },
+        text = {
+            Column(
+                modifier = Modifier.verticalScroll(rememberScrollState())
+            ) {
+                Text(
+                    text = "사용 안내",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = Color(0xFF2196F3)
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Text(
+                    text = "본격 결과는 참고 지표입니다.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color.Black
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Text(
+                    text = "법적 고지 및 면책",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = Color(0xFF2196F3)
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                val disclaimerText = """
+                    • 이 앱은 의료기기/진단 도구가 아닙니다. 질병의 진단·치료·예방 목적에 사용할 수 없습니다.
+                    • 결과는 혈중알코올농도(BAC) 측정기를 대체하지 않습니다.
+                    • 운전 가능 여부 판단에 절대 사용하지 마세요.
+                    • 결과는 조명·각도·표정 등 환경에 따라 부정확할 수 있습니다. 오판 책임은 사용자에게 있습니다.
+                    • 이 앱은 온디바이스로 동작하며, 기본적으로 서버 전송을 하지 않습니다. 설정에서 데이터 전체 삭제가 가능합니다.
+                    • 응급 상황(알코올 중독 의심, 의식 저하 등)에서는 즉시 지역 응급번호로 연락하거나 의료기관을 이용하세요.
+                """.trimIndent()
+
+                Text(
+                    text = disclaimerText,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color.Black,
+                    lineHeight = 18.sp
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Text(
+                    text = "데이터 관리: 설정 > 데이터 관리",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color.Gray
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = onDismiss,
+                colors = ButtonDefaults.textButtonColors(
+                    contentColor = Color(0xFF2196F3)
+                )
+            ) {
+                Text(
+                    text = "확인",
+                    fontWeight = FontWeight.Medium
+                )
+            }
+        },
+        containerColor = Color.White,
+        shape = RoundedCornerShape(16.dp)
+    )
+}
+
+@Composable
+private fun SettingsItem(
+    title: String,
+    subtitle: String,
+    onClick: () -> Unit,
+    isDestructive: Boolean = false
+) {
+    TextButton(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth(),
+        contentPadding = PaddingValues(vertical = 8.dp, horizontal = 0.dp),
+        colors = ButtonDefaults.textButtonColors(
+            contentColor = if (isDestructive) MaterialTheme.colorScheme.error else TextPrimary
+        ),
+        shape = RoundedCornerShape(8.dp)
+    ) {
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalAlignment = Alignment.Start
+        ) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.Medium,
+                color = if (isDestructive) MaterialTheme.colorScheme.error else TextPrimary
+            )
+            Spacer(modifier = Modifier.height(2.dp))
+            Text(
+                text = subtitle,
+                style = MaterialTheme.typography.bodySmall,
+                color = if (isDestructive) MaterialTheme.colorScheme.error.copy(alpha = 0.7f) else TextSecondary
             )
         }
     }
