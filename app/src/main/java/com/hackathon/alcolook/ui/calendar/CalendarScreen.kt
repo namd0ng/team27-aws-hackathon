@@ -400,37 +400,11 @@ private fun MonthlyCalendarContent(
                 
                 // 요약 정보 표시
                 if (selectedDateRecords.isNotEmpty()) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text(
-                            text = "총 음주량: ${String.format("%.1f", totalAlcohol)}g",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = TextSecondary
-                        )
-                        Text(
-                            text = "표준잔수: ${String.format("%.1f", totalStandardDrinks)}잔",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = TextSecondary
-                        )
-                        Text(
-                            text = when(selectedDateStatus) {
-                                DrinkingStatus.APPROPRIATE -> "적정"
-                                DrinkingStatus.CAUTION -> "주의"
-                                DrinkingStatus.EXCESSIVE -> "과음"
-                                DrinkingStatus.DANGEROUS -> "위험"
-                            },
-                            style = MaterialTheme.typography.bodySmall,
-                            fontWeight = FontWeight.SemiBold,
-                            color = when(selectedDateStatus) {
-                                DrinkingStatus.APPROPRIATE -> androidx.compose.ui.graphics.Color.Green
-                                DrinkingStatus.CAUTION -> androidx.compose.ui.graphics.Color(0xFFFF9800)
-                                DrinkingStatus.EXCESSIVE -> androidx.compose.ui.graphics.Color.Red
-                                DrinkingStatus.DANGEROUS -> androidx.compose.ui.graphics.Color.Black
-                            }
-                        )
-                    }
+                    Text(
+                        text = "총 음주량 ${String.format("%.1f", totalAlcohol)}g (표준잔 ${String.format("%.1f", totalStandardDrinks)}잔)",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = TextSecondary
+                    )
                     Spacer(modifier = Modifier.height(12.dp))
                 }
                 
