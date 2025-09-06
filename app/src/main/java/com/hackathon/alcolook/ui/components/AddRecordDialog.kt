@@ -128,7 +128,11 @@ fun AddRecordDialog(
                                 onClick = { selectedUnit = unit },
                                 label = { 
                                     Text(
-                                        text = "${unit.getDisplayName()} (${unit.getVolumeMl(selectedType)}ml)",
+                                        text = if (unit == DrinkUnit.OTHER) {
+                                            "${unit.getDisplayName()} (직접 입력)"
+                                        } else {
+                                            "${unit.getDisplayName()} (${unit.getVolumeMl(selectedType)}ml)"
+                                        },
                                         style = MaterialTheme.typography.bodySmall
                                     )
                                 },
