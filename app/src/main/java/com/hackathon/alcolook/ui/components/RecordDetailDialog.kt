@@ -8,6 +8,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -54,10 +55,10 @@ fun RecordDetailDialog(
                     Card(
                         colors = CardDefaults.cardColors(
                             containerColor = when(dailyStatus) {
-                                DrinkingStatus.APPROPRIATE -> androidx.compose.ui.graphics.Color.Green.copy(alpha = 0.1f)
-                                DrinkingStatus.CAUTION -> androidx.compose.ui.graphics.Color.Yellow.copy(alpha = 0.1f)
-                                DrinkingStatus.EXCESSIVE -> androidx.compose.ui.graphics.Color.Red.copy(alpha = 0.1f)
-                                DrinkingStatus.DANGEROUS -> androidx.compose.ui.graphics.Color.Black.copy(alpha = 0.1f)
+                                DrinkingStatus.APPROPRIATE -> Color(0xFFE8F5E8)
+                                DrinkingStatus.CAUTION -> Color(0xFFFFF4E5)
+                                DrinkingStatus.EXCESSIVE -> Color(0xFFFDEBEC)
+                                DrinkingStatus.DANGEROUS -> Color(0xFFFFE0E0)
                             }
                         )
                     ) {
@@ -86,10 +87,10 @@ fun RecordDetailDialog(
                                 }}",
                                 fontWeight = FontWeight.SemiBold,
                                 color = when(dailyStatus) {
-                                    DrinkingStatus.APPROPRIATE -> androidx.compose.ui.graphics.Color.Green
-                                    DrinkingStatus.CAUTION -> androidx.compose.ui.graphics.Color(0xFFFF9800)
-                                    DrinkingStatus.EXCESSIVE -> androidx.compose.ui.graphics.Color.Red
-                                    DrinkingStatus.DANGEROUS -> androidx.compose.ui.graphics.Color.Black
+                                    DrinkingStatus.APPROPRIATE -> Color(0xFFE8F5E8)
+                                    DrinkingStatus.CAUTION -> Color(0xFFFFF4E5)
+                                    DrinkingStatus.EXCESSIVE -> Color(0xFFFDEBEC)
+                                    DrinkingStatus.DANGEROUS -> Color(0xFFFFE0E0)
                                 }
                             )
                         }
