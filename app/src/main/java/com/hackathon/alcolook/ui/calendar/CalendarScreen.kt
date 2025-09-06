@@ -360,36 +360,12 @@ private fun MonthlyCalendarContent(
             Column(
                 modifier = Modifier.padding(16.dp)
             ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "${selectedDate.format(DateTimeFormatter.ofPattern("M월 d일"))} 기록",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        color = TextPrimary
-                    )
-                    
-                    OutlinedButton(
-                        onClick = { 
-                            if (selectedDateRecords.isNotEmpty()) {
-                                showDetailDialog = true 
-                            }
-                        },
-                        colors = ButtonDefaults.outlinedButtonColors(
-                            contentColor = TabSelected
-                        ),
-                        shape = RoundedCornerShape(8.dp)
-                    ) {
-                        Text(
-                            text = "요약 보기",
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Medium
-                        )
-                    }
-                }
+                Text(
+                    text = "${selectedDate.format(DateTimeFormatter.ofPattern("M월 d일"))} 기록",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = TextPrimary
+                )
                 
                 Spacer(modifier = Modifier.height(16.dp))
                 
@@ -400,11 +376,30 @@ private fun MonthlyCalendarContent(
                 
                 // 요약 정보 표시
                 if (selectedDateRecords.isNotEmpty()) {
-                    Text(
-                        text = "총 음주량 ${String.format("%.1f", totalAlcohol)}g (표준잔 ${String.format("%.1f", totalStandardDrinks)}잔)",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = TextSecondary
-                    )
+                    Card(
+                        colors = CardDefaults.cardColors(
+                            containerColor = when (selectedDateStatus) {
+                                DrinkingStatus.APPROPRIATE -> Color(0xFFE8F5E8)
+                                DrinkingStatus.CAUTION -> Color(0xFFFFF4E5)
+                                DrinkingStatus.EXCESSIVE -> Color(0xFFFDEBEC)
+                                DrinkingStatus.DANGEROUS -> Color(0xFFFFE0E0)
+                            }
+                        ),
+                        shape = RoundedCornerShape(50.dp)
+                    ) {
+                        Text(
+                            text = "총 음주량 ${String.format("%.1f", totalAlcohol)}g (표준잔 ${String.format("%.1f", totalStandardDrinks)}잔)",
+                            style = MaterialTheme.typography.bodySmall,
+                            fontWeight = FontWeight.SemiBold,
+                            color = when (selectedDateStatus) {
+                                DrinkingStatus.APPROPRIATE -> Color(0xFF2E7D32)
+                                DrinkingStatus.CAUTION -> Color(0xFFE65100)
+                                DrinkingStatus.EXCESSIVE -> Color(0xFFC62828)
+                                DrinkingStatus.DANGEROUS -> Color.Black
+                            },
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                        )
+                    }
                     Spacer(modifier = Modifier.height(12.dp))
                 }
                 
@@ -599,17 +594,13 @@ private fun StatisticsContent(
         // 주간 진행률
         val weeklyAlcohol = weeklyStats.totalStandardDrinks * 8f
         val weeklyLimit = if (isMale) 196f else 98f
-        val result = if (weeklyLimit > 0f) (weeklyAlcohol / weeklyLimit).coerceIn(0f, 1f) else 0f
-        println("DEBUG: weeklyAlcohol=$weeklyAlcohol, weeklyLimit=$weeklyLimit, progressValue=$result")
-        result
+        if (weeklyLimit > 0f) (weeklyAlcohol / weeklyLimit).coerceIn(0f, 1f) else 0f
     } else {
         // 월간 진행률
         val monthlyAlcohol = monthlyStats.totalStandardDrinks * 8f
         val daysInMonth = java.time.LocalDate.now().lengthOfMonth()
         val monthlyLimit = if (isMale) (28f * daysInMonth) else (14f * daysInMonth)
-        val result = if (monthlyLimit > 0f) (monthlyAlcohol / monthlyLimit).coerceIn(0f, 1f) else 0f
-        println("DEBUG: monthlyAlcohol=$monthlyAlcohol, monthlyLimit=$monthlyLimit, progressValue=$result")
-        result
+        if (monthlyLimit > 0f) (monthlyAlcohol / monthlyLimit).coerceIn(0f, 1f) else 0f
     }
     
     Column(
