@@ -1,0 +1,1030 @@
+{
+  "summary": {
+    "total_images": 204,
+    "successful": 204,
+    "failed": 0,
+    "average_drunk_level": 55.3
+  },
+  "results": [
+    {
+      "file": "test (1).jpg",
+      "level": 100,
+      "error": null
+    },
+    {
+      "file": "test (10).jpg",
+      "level": 50,
+      "error": null
+    },
+    {
+      "file": "test (100).jpg",
+      "level": 70,
+      "error": null
+    },
+    {
+      "file": "test (101).jpg",
+      "level": 40,
+      "error": null
+    },
+    {
+      "file": "test (102).jpg",
+      "level": 50,
+      "error": null
+    },
+    {
+      "file": "test (103).jpg",
+      "level": 50,
+      "error": null
+    },
+    {
+      "file": "test (104).jpg",
+      "level": 40,
+      "error": null
+    },
+    {
+      "file": "test (105).jpg",
+      "level": 70,
+      "error": null
+    },
+    {
+      "file": "test (106).jpg",
+      "level": 30,
+      "error": null
+    },
+    {
+      "file": "test (107).jpg",
+      "level": 40,
+      "error": null
+    },
+    {
+      "file": "test (108).jpg",
+      "level": 50,
+      "error": null
+    },
+    {
+      "file": "test (109).jpg",
+      "level": 100,
+      "error": null
+    },
+    {
+      "file": "test (11).jpg",
+      "level": 90,
+      "error": null
+    },
+    {
+      "file": "test (110).jpg",
+      "level": 54,
+      "error": null
+    },
+    {
+      "file": "test (111).jpg",
+      "level": 64,
+      "error": null
+    },
+    {
+      "file": "test (112).jpg",
+      "level": 0,
+      "error": null
+    },
+    {
+      "file": "test (113).jpg",
+      "level": 50,
+      "error": null
+    },
+    {
+      "file": "test (114).jpg",
+      "level": 86,
+      "error": null
+    },
+    {
+      "file": "test (115).jpg",
+      "level": 100,
+      "error": null
+    },
+    {
+      "file": "test (116).jpg",
+      "level": 0,
+      "error": null
+    },
+    {
+      "file": "test (117).jpg",
+      "level": 40,
+      "error": null
+    },
+    {
+      "file": "test (118).jpg",
+      "level": 90,
+      "error": null
+    },
+    {
+      "file": "test (119).jpg",
+      "level": 30,
+      "error": null
+    },
+    {
+      "file": "test (12).jpg",
+      "level": 49,
+      "error": null
+    },
+    {
+      "file": "test (120).jpg",
+      "level": 50,
+      "error": null
+    },
+    {
+      "file": "test (121).jpg",
+      "level": 100,
+      "error": null
+    },
+    {
+      "file": "test (122).jpg",
+      "level": 0,
+      "error": null
+    },
+    {
+      "file": "test (123).jpg",
+      "level": 55,
+      "error": null
+    },
+    {
+      "file": "test (124).jpg",
+      "level": 48,
+      "error": null
+    },
+    {
+      "file": "test (125).jpg",
+      "level": 0,
+      "error": null
+    },
+    {
+      "file": "test (126).jpg",
+      "level": 50,
+      "error": null
+    },
+    {
+      "file": "test (127).jpg",
+      "level": 40,
+      "error": null
+    },
+    {
+      "file": "test (128).jpg",
+      "level": 0,
+      "error": null
+    },
+    {
+      "file": "test (129).jpg",
+      "level": 40,
+      "error": null
+    },
+    {
+      "file": "test (13).jpg",
+      "level": 90,
+      "error": null
+    },
+    {
+      "file": "test (130).jpg",
+      "level": 45,
+      "error": null
+    },
+    {
+      "file": "test (131).jpg",
+      "level": 80,
+      "error": null
+    },
+    {
+      "file": "test (132).jpg",
+      "level": 0,
+      "error": null
+    },
+    {
+      "file": "test (133).jpg",
+      "level": 100,
+      "error": null
+    },
+    {
+      "file": "test (134).jpg",
+      "level": 0,
+      "error": null
+    },
+    {
+      "file": "test (135).jpg",
+      "level": 100,
+      "error": null
+    },
+    {
+      "file": "test (136).jpg",
+      "level": 100,
+      "error": null
+    },
+    {
+      "file": "test (137).jpg",
+      "level": 100,
+      "error": null
+    },
+    {
+      "file": "test (138).jpg",
+      "level": 100,
+      "error": null
+    },
+    {
+      "file": "test (139).jpg",
+      "level": 0,
+      "error": null
+    },
+    {
+      "file": "test (14).jpg",
+      "level": 68,
+      "error": null
+    },
+    {
+      "file": "test (140).jpg",
+      "level": 50,
+      "error": null
+    },
+    {
+      "file": "test (141).jpg",
+      "level": 100,
+      "error": null
+    },
+    {
+      "file": "test (142).jpg",
+      "level": 47,
+      "error": null
+    },
+    {
+      "file": "test (143).jpg",
+      "level": 80,
+      "error": null
+    },
+    {
+      "file": "test (144).jpg",
+      "level": 100,
+      "error": null
+    },
+    {
+      "file": "test (145).jpg",
+      "level": 70,
+      "error": null
+    },
+    {
+      "file": "test (146).jpg",
+      "level": 100,
+      "error": null
+    },
+    {
+      "file": "test (147).jpg",
+      "level": 0,
+      "error": null
+    },
+    {
+      "file": "test (148).jpg",
+      "level": 90,
+      "error": null
+    },
+    {
+      "file": "test (149).jpg",
+      "level": 100,
+      "error": null
+    },
+    {
+      "file": "test (15).jpg",
+      "level": 100,
+      "error": null
+    },
+    {
+      "file": "test (150).jpg",
+      "level": 60,
+      "error": null
+    },
+    {
+      "file": "test (151).jpg",
+      "level": 60,
+      "error": null
+    },
+    {
+      "file": "test (152).jpg",
+      "level": 0,
+      "error": null
+    },
+    {
+      "file": "test (153).jpg",
+      "level": 80,
+      "error": null
+    },
+    {
+      "file": "test (154).jpg",
+      "level": 64,
+      "error": null
+    },
+    {
+      "file": "test (155).jpg",
+      "level": 30,
+      "error": null
+    },
+    {
+      "file": "test (156).jpg",
+      "level": 0,
+      "error": null
+    },
+    {
+      "file": "test (157).jpg",
+      "level": 0,
+      "error": null
+    },
+    {
+      "file": "test (158).jpg",
+      "level": 50,
+      "error": null
+    },
+    {
+      "file": "test (159).jpg",
+      "level": 93,
+      "error": null
+    },
+    {
+      "file": "test (16).jpg",
+      "level": 0,
+      "error": null
+    },
+    {
+      "file": "test (160).jpg",
+      "level": 70,
+      "error": null
+    },
+    {
+      "file": "test (161).jpg",
+      "level": 40,
+      "error": null
+    },
+    {
+      "file": "test (162).jpg",
+      "level": 100,
+      "error": null
+    },
+    {
+      "file": "test (163).jpg",
+      "level": 50,
+      "error": null
+    },
+    {
+      "file": "test (164).jpg",
+      "level": 30,
+      "error": null
+    },
+    {
+      "file": "test (165).jpg",
+      "level": 52,
+      "error": null
+    },
+    {
+      "file": "test (166).jpg",
+      "level": 51,
+      "error": null
+    },
+    {
+      "file": "test (167).jpg",
+      "level": 91,
+      "error": null
+    },
+    {
+      "file": "test (168).jpg",
+      "level": 100,
+      "error": null
+    },
+    {
+      "file": "test (169).jpg",
+      "level": 0,
+      "error": null
+    },
+    {
+      "file": "test (17).jpg",
+      "level": 50,
+      "error": null
+    },
+    {
+      "file": "test (170).jpg",
+      "level": 50,
+      "error": null
+    },
+    {
+      "file": "test (171).jpg",
+      "level": 72,
+      "error": null
+    },
+    {
+      "file": "test (172).jpg",
+      "level": 80,
+      "error": null
+    },
+    {
+      "file": "test (173).jpg",
+      "level": 100,
+      "error": null
+    },
+    {
+      "file": "test (174).jpg",
+      "level": 50,
+      "error": null
+    },
+    {
+      "file": "test (175).jpg",
+      "level": 40,
+      "error": null
+    },
+    {
+      "file": "test (176).jpg",
+      "level": 90,
+      "error": null
+    },
+    {
+      "file": "test (177).jpg",
+      "level": 65,
+      "error": null
+    },
+    {
+      "file": "test (178).jpg",
+      "level": 70,
+      "error": null
+    },
+    {
+      "file": "test (179).jpg",
+      "level": 70,
+      "error": null
+    },
+    {
+      "file": "test (18).jpg",
+      "level": 90,
+      "error": null
+    },
+    {
+      "file": "test (180).jpg",
+      "level": 100,
+      "error": null
+    },
+    {
+      "file": "test (181).jpg",
+      "level": 50,
+      "error": null
+    },
+    {
+      "file": "test (182).jpg",
+      "level": 100,
+      "error": null
+    },
+    {
+      "file": "test (183).jpg",
+      "level": 50,
+      "error": null
+    },
+    {
+      "file": "test (184).jpg",
+      "level": 80,
+      "error": null
+    },
+    {
+      "file": "test (185).jpg",
+      "level": 30,
+      "error": null
+    },
+    {
+      "file": "test (186).jpg",
+      "level": 40,
+      "error": null
+    },
+    {
+      "file": "test (187).jpg",
+      "level": 100,
+      "error": null
+    },
+    {
+      "file": "test (188).jpg",
+      "level": 90,
+      "error": null
+    },
+    {
+      "file": "test (189).jpg",
+      "level": 100,
+      "error": null
+    },
+    {
+      "file": "test (19).jpg",
+      "level": 0,
+      "error": null
+    },
+    {
+      "file": "test (190).jpg",
+      "level": 100,
+      "error": null
+    },
+    {
+      "file": "test (191).jpg",
+      "level": 0,
+      "error": null
+    },
+    {
+      "file": "test (192).jpg",
+      "level": 100,
+      "error": null
+    },
+    {
+      "file": "test (193).jpg",
+      "level": 40,
+      "error": null
+    },
+    {
+      "file": "test (194).jpg",
+      "level": 30,
+      "error": null
+    },
+    {
+      "file": "test (195).jpg",
+      "level": 50,
+      "error": null
+    },
+    {
+      "file": "test (196).jpg",
+      "level": 100,
+      "error": null
+    },
+    {
+      "file": "test (197).jpg",
+      "level": 100,
+      "error": null
+    },
+    {
+      "file": "test (198).jpg",
+      "level": 30,
+      "error": null
+    },
+    {
+      "file": "test (199).jpg",
+      "level": 60,
+      "error": null
+    },
+    {
+      "file": "test (2).jpg",
+      "level": 90,
+      "error": null
+    },
+    {
+      "file": "test (20).jpg",
+      "level": 50,
+      "error": null
+    },
+    {
+      "file": "test (200).jpg",
+      "level": 100,
+      "error": null
+    },
+    {
+      "file": "test (201).jpg",
+      "level": 30,
+      "error": null
+    },
+    {
+      "file": "test (202).jpg",
+      "level": 30,
+      "error": null
+    },
+    {
+      "file": "test (203).jpg",
+      "level": 30,
+      "error": null
+    },
+    {
+      "file": "test (204).jpg",
+      "level": 100,
+      "error": null
+    },
+    {
+      "file": "test (21).jpg",
+      "level": 48,
+      "error": null
+    },
+    {
+      "file": "test (22).jpg",
+      "level": 0,
+      "error": null
+    },
+    {
+      "file": "test (23).jpg",
+      "level": 44,
+      "error": null
+    },
+    {
+      "file": "test (24).jpg",
+      "level": 0,
+      "error": null
+    },
+    {
+      "file": "test (25).jpg",
+      "level": 0,
+      "error": null
+    },
+    {
+      "file": "test (26).jpg",
+      "level": 0,
+      "error": null
+    },
+    {
+      "file": "test (27).jpg",
+      "level": 0,
+      "error": null
+    },
+    {
+      "file": "test (28).jpg",
+      "level": 100,
+      "error": null
+    },
+    {
+      "file": "test (29).jpg",
+      "level": 90,
+      "error": null
+    },
+    {
+      "file": "test (3).jpg",
+      "level": 30,
+      "error": null
+    },
+    {
+      "file": "test (30).jpg",
+      "level": 0,
+      "error": null
+    },
+    {
+      "file": "test (31).jpg",
+      "level": 100,
+      "error": null
+    },
+    {
+      "file": "test (32).jpg",
+      "level": 75,
+      "error": null
+    },
+    {
+      "file": "test (33).jpg",
+      "level": 30,
+      "error": null
+    },
+    {
+      "file": "test (34).jpg",
+      "level": 50,
+      "error": null
+    },
+    {
+      "file": "test (35).jpg",
+      "level": 78,
+      "error": null
+    },
+    {
+      "file": "test (36).jpg",
+      "level": 40,
+      "error": null
+    },
+    {
+      "file": "test (37).jpg",
+      "level": 77,
+      "error": null
+    },
+    {
+      "file": "test (38).jpg",
+      "level": 70,
+      "error": null
+    },
+    {
+      "file": "test (39).jpg",
+      "level": 100,
+      "error": null
+    },
+    {
+      "file": "test (4).jpg",
+      "level": 0,
+      "error": null
+    },
+    {
+      "file": "test (40).jpg",
+      "level": 100,
+      "error": null
+    },
+    {
+      "file": "test (41).jpg",
+      "level": 100,
+      "error": null
+    },
+    {
+      "file": "test (42).jpg",
+      "level": 100,
+      "error": null
+    },
+    {
+      "file": "test (43).jpg",
+      "level": 90,
+      "error": null
+    },
+    {
+      "file": "test (44).jpg",
+      "level": 100,
+      "error": null
+    },
+    {
+      "file": "test (45).jpg",
+      "level": 96,
+      "error": null
+    },
+    {
+      "file": "test (46).jpg",
+      "level": 30,
+      "error": null
+    },
+    {
+      "file": "test (47).jpg",
+      "level": 70,
+      "error": null
+    },
+    {
+      "file": "test (48).jpg",
+      "level": 48,
+      "error": null
+    },
+    {
+      "file": "test (49).jpg",
+      "level": 39,
+      "error": null
+    },
+    {
+      "file": "test (5).jpg",
+      "level": 50,
+      "error": null
+    },
+    {
+      "file": "test (50).jpg",
+      "level": 0,
+      "error": null
+    },
+    {
+      "file": "test (51).jpg",
+      "level": 0,
+      "error": null
+    },
+    {
+      "file": "test (52).jpg",
+      "level": 0,
+      "error": null
+    },
+    {
+      "file": "test (53).jpg",
+      "level": 100,
+      "error": null
+    },
+    {
+      "file": "test (54).jpg",
+      "level": 30,
+      "error": null
+    },
+    {
+      "file": "test (55).jpg",
+      "level": 0,
+      "error": null
+    },
+    {
+      "file": "test (56).jpg",
+      "level": 30,
+      "error": null
+    },
+    {
+      "file": "test (57).jpg",
+      "level": 100,
+      "error": null
+    },
+    {
+      "file": "test (58).jpg",
+      "level": 50,
+      "error": null
+    },
+    {
+      "file": "test (59).jpg",
+      "level": 40,
+      "error": null
+    },
+    {
+      "file": "test (6).jpg",
+      "level": 50,
+      "error": null
+    },
+    {
+      "file": "test (60).jpg",
+      "level": 40,
+      "error": null
+    },
+    {
+      "file": "test (61).jpg",
+      "level": 0,
+      "error": null
+    },
+    {
+      "file": "test (62).jpg",
+      "level": 50,
+      "error": null
+    },
+    {
+      "file": "test (63).jpg",
+      "level": 30,
+      "error": null
+    },
+    {
+      "file": "test (64).jpg",
+      "level": 30,
+      "error": null
+    },
+    {
+      "file": "test (65).jpg",
+      "level": 49,
+      "error": null
+    },
+    {
+      "file": "test (66).jpg",
+      "level": 0,
+      "error": null
+    },
+    {
+      "file": "test (67).jpg",
+      "level": 55,
+      "error": null
+    },
+    {
+      "file": "test (68).jpg",
+      "level": 30,
+      "error": null
+    },
+    {
+      "file": "test (69).jpg",
+      "level": 89,
+      "error": null
+    },
+    {
+      "file": "test (7).jpg",
+      "level": 0,
+      "error": null
+    },
+    {
+      "file": "test (70).jpg",
+      "level": 80,
+      "error": null
+    },
+    {
+      "file": "test (71).jpg",
+      "level": 100,
+      "error": null
+    },
+    {
+      "file": "test (72).jpg",
+      "level": 70,
+      "error": null
+    },
+    {
+      "file": "test (73).jpg",
+      "level": 80,
+      "error": null
+    },
+    {
+      "file": "test (74).jpg",
+      "level": 0,
+      "error": null
+    },
+    {
+      "file": "test (75).jpg",
+      "level": 100,
+      "error": null
+    },
+    {
+      "file": "test (76).jpg",
+      "level": 49,
+      "error": null
+    },
+    {
+      "file": "test (77).jpg",
+      "level": 82,
+      "error": null
+    },
+    {
+      "file": "test (78).jpg",
+      "level": 100,
+      "error": null
+    },
+    {
+      "file": "test (79).jpg",
+      "level": 30,
+      "error": null
+    },
+    {
+      "file": "test (8).jpg",
+      "level": 40,
+      "error": null
+    },
+    {
+      "file": "test (80).jpg",
+      "level": 0,
+      "error": null
+    },
+    {
+      "file": "test (81).jpg",
+      "level": 0,
+      "error": null
+    },
+    {
+      "file": "test (82).jpg",
+      "level": 100,
+      "error": null
+    },
+    {
+      "file": "test (83).jpg",
+      "level": 100,
+      "error": null
+    },
+    {
+      "file": "test (84).jpg",
+      "level": 100,
+      "error": null
+    },
+    {
+      "file": "test (85).jpg",
+      "level": 0,
+      "error": null
+    },
+    {
+      "file": "test (86).jpg",
+      "level": 50,
+      "error": null
+    },
+    {
+      "file": "test (87).jpg",
+      "level": 0,
+      "error": null
+    },
+    {
+      "file": "test (88).jpg",
+      "level": 100,
+      "error": null
+    },
+    {
+      "file": "test (89).jpg",
+      "level": 100,
+      "error": null
+    },
+    {
+      "file": "test (9).jpg",
+      "level": 40,
+      "error": null
+    },
+    {
+      "file": "test (90).jpg",
+      "level": 100,
+      "error": null
+    },
+    {
+      "file": "test (91).jpg",
+      "level": 0,
+      "error": null
+    },
+    {
+      "file": "test (92).jpg",
+      "level": 0,
+      "error": null
+    },
+    {
+      "file": "test (93).jpg",
+      "level": 50,
+      "error": null
+    },
+    {
+      "file": "test (94).jpg",
+      "level": 100,
+      "error": null
+    },
+    {
+      "file": "test (95).jpg",
+      "level": 80,
+      "error": null
+    },
+    {
+      "file": "test (96).jpg",
+      "level": 0,
+      "error": null
+    },
+    {
+      "file": "test (97).jpg",
+      "level": 70,
+      "error": null
+    },
+    {
+      "file": "test (98).jpg",
+      "level": 0,
+      "error": null
+    },
+    {
+      "file": "test (99).jpg",
+      "level": 50,
+      "error": null
+    }
+  ]
+}

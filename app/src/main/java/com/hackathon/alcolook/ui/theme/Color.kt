@@ -23,7 +23,18 @@ val BottomNavBackground = Color(0xFFFFFFFF) // Bottom nav background
 val BottomNavSelected = Color(0xFF007AFF) // Selected bottom nav
 val BottomNavUnselected = Color(0xFF8E8E93) // Unselected bottom nav
 
-// Status Colors
-val StatusNormal = Color(0xFFE8F5E8) // Green for normal
-val StatusWarning = Color(0xFFFFF4E5) // Orange for warning
-val StatusDanger = Color(0xFFFFE0E0) // Red for danger
+
+val StatusNormal = Color(0xFF34C759) // Green for normal
+val StatusWarning = Color(0xFFFF9500) // Orange for warning  
+val StatusDanger = Color(0xFFFF3B30) // Red for danger
+
+
+// 아래는 임시 컬러입니다..
+
+val Purple80 = Color(0xFFD0BCFF)
+val PurpleGrey80 = Color(0xFFCCC2DC)
+val Pink80 = Color(0xFFEFB8C8)
+
+val Purple40 = Color(0xFF6650a4)
+val PurpleGrey40 = Color(0xFF625b71)
+val Pink40 = Color(0xFF7D5260)

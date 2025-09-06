@@ -1,26 +1,22 @@
-# Gradle
-.gradle/
-build/
-!gradle/wrapper/gradle-wrapper.jar
-
-# Android
 *.iml
-.idea/
-local.properties
-*.log
-
-# Kotlin
-.kotlin/
-
-# Temporary files
-*.tmp
-*.temp
-
-# OS generated files
+.gradle
+/local.properties
+/.idea/caches
+/.idea/libraries
+/.idea/modules.xml
+/.idea/workspace.xml
+/.idea/navEditor.xml
+/.idea/assetWizardSettings.xml
 .DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Thumbs.db
+/build
+/captures
+.externalNativeBuild
+.cxx
+local.properties
+# Test datasets and analysis results
+drunk-images/
+test-images/
+analysis-results/
+*.log
+batch-analysis-*.txt
+test-results-*.json
