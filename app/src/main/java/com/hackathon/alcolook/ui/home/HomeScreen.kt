@@ -347,11 +347,7 @@ fun CameraMeasurementScreen(
                     // 얼굴 박스 오버레이
                     if (faces.isNotEmpty()) {
                         FaceDetectionOverlay(
-                            faces = faces,
-                            imageWidth = 640,
-                            imageHeight = 480,
-                            displayWidth = 300f,
-                            displayHeight = 300f
+                            faces = faces
                         )
                     }
                     

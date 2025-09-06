@@ -38,7 +38,14 @@ class DrunkDetectionService(private val context: Context) {
         
         return@withContext if (AwsConfig.TEST_MODE || rekognitionClient == null) {
             val testResult = generateTestDrunkLevel()
-            val testFaceBox = FaceBox(0.2f, 0.2f, 0.6f, 0.6f, testResult, "realtime")
+            val testFaceBox = FaceBox(
+                left = 0.25f, 
+                top = 0.3f, 
+                width = 0.5f, 
+                height = 0.4f, 
+                drunkPercentage = testResult, 
+                personId = "face_1"
+            )
             Log.d(TAG, "테스트 모드 결과: ${testResult}%")
             DrunkDetectionResult(testResult.toFloat(), getDrunkMessage(testResult), listOf(testFaceBox))
         } else {
@@ -64,7 +71,7 @@ class DrunkDetectionService(private val context: Context) {
                             width = boundingBox.width,
                             height = boundingBox.height,
                             drunkPercentage = drunkLevel,
-                            personId = "realtime_$index"
+                            personId = "face_${index + 1}"
                         )
                     }
                     
@@ -78,7 +85,7 @@ class DrunkDetectionService(private val context: Context) {
             } catch (e: Exception) {
                 Log.e(TAG, "AWS 연결 실패: ${e.message}")
                 val fallbackResult = generateTestDrunkLevel()
-                val testFaceBox = FaceBox(0.2f, 0.2f, 0.6f, 0.6f, fallbackResult, "fallback")
+                val testFaceBox = FaceBox(0.25f, 0.3f, 0.5f, 0.4f, fallbackResult, "fallback")
                 Log.d(TAG, "대체 결과: ${fallbackResult}%")
                 DrunkDetectionResult(fallbackResult.toFloat(), getDrunkMessage(fallbackResult), listOf(testFaceBox))
             }
@@ -116,8 +123,8 @@ class DrunkDetectionService(private val context: Context) {
             }
         }
         
-        // 실시간용: 점수를 1.5배로 증폭
-        val amplifiedScore = drunkScore * 1.5f
+        // 실시간용: 점수를 0.75배로 감소 (역치 2배 높임)
+        val amplifiedScore = drunkScore * 0.75f
         val finalScore = minOf(100, maxOf(0, amplifiedScore.toInt()))
         
         Log.d(TAG, "실시간 음주도: ${finalScore}%")

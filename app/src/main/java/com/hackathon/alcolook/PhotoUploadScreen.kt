@@ -6,22 +6,16 @@ import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.launch
@@ -54,7 +48,6 @@ fun PhotoUploadScreen(
                 faces = emptyList()
                 analysisResult = null
                 selectedFaceIndex = null
-                faces = emptyList() // 새 이미지 선택 시 결과 초기화
             } catch (e: Exception) {
                 // 이미지 로드 실패
             }
@@ -91,18 +84,10 @@ fun PhotoUploadScreen(
                     contentScale = ContentScale.Fit
                 )
                 
-                // 얼굴 박스 오버레이
+                // 얼굴 박스 오버레이 (단순화된 호출)
                 if (faces.isNotEmpty()) {
                     FaceDetectionOverlay(
-                        faces = faces,
-                        imageWidth = bitmap.width,
-                        imageHeight = bitmap.height,
-                        displayWidth = with(LocalDensity.current) { 
-                            LocalConfiguration.current.screenWidthDp.dp.toPx() - 32.dp.toPx()
-                        },
-                        displayHeight = with(LocalDensity.current) { 
-                            (LocalConfiguration.current.screenHeightDp * 0.6f).dp.toPx()
-                        }
+                        faces = faces
                     )
                 }
             } ?: run {
@@ -296,23 +281,5 @@ fun PhotoUploadScreen(
                 Text("실시간 카메라 모드로 돌아가기")
             }
         }
-    }
-}
-
-private fun getColorForPercentage(percentage: Int): Color {
-    return when {
-        percentage < 30 -> Color.Green
-        percentage < 60 -> Color.Yellow
-        else -> Color.Red
-    }
-}
-
-private fun getDrunkMessage(percentage: Int): String {
-    return when {
-        percentage < 20 -> "아직 괜찮아요!"
-        percentage < 40 -> "조금 취한 것 같네요"
-        percentage < 60 -> "술기운이 좀 올라오네요?"
-        percentage < 80 -> "많이 취하신 것 같아요!"
-        else -> "매우 위험한 상태입니다!"
     }
 }

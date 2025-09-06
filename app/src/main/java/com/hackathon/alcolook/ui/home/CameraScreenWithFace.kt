@@ -59,15 +59,15 @@ fun CameraScreenWithFace(
         
         Spacer(modifier = Modifier.height(16.dp))
         
-        // 카메라 프리뷰 영역 (높이 줄임)
+        // 카메라 프리뷰 영역
         Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(300.dp),
+                .height(400.dp),
             colors = CardDefaults.cardColors(
                 containerColor = MaterialTheme.colorScheme.surfaceVariant
             ),
-            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
         ) {
             Box(
                 modifier = Modifier.fillMaxSize()
@@ -92,33 +92,63 @@ fun CameraScreenWithFace(
                         modifier = Modifier.fillMaxSize()
                     )
                     
-                    // 얼굴 박스 오버레이
+                    // 얼굴 박스 오버레이 (단순화된 호출)
                     if (faces.isNotEmpty()) {
                         FaceDetectionOverlay(
                             faces = faces,
-                            imageWidth = 640,
-                            imageHeight = 480,
-                            displayWidth = 400f,
-                            displayHeight = 400f,
                             modifier = Modifier.fillMaxSize()
                         )
                     }
                     
-                    // 음주 확률 표시 (이미 퍼센트 값이므로 그대로 사용)
+                    // 분석 상태 표시
+                    if (isAnalyzing) {
+                        Card(
+                            modifier = Modifier
+                                .align(Alignment.TopStart)
+                                .padding(12.dp),
+                            colors = CardDefaults.cardColors(
+                                containerColor = Color.Black.copy(alpha = 0.7f)
+                            )
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(8.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(16.dp),
+                                    color = Color.White,
+                                    strokeWidth = 2.dp
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = "분석 중...",
+                                    color = Color.White,
+                                    fontSize = 12.sp
+                                )
+                            }
+                        }
+                    }
+                    
+                    // 음주 확률 표시
                     currentDrunkLevel?.let { level ->
                         Card(
                             modifier = Modifier
                                 .align(Alignment.TopEnd)
-                                .padding(8.dp),
+                                .padding(12.dp),
                             colors = CardDefaults.cardColors(
-                                containerColor = Color.Black.copy(alpha = 0.7f)
+                                containerColor = when {
+                                    level < 30 -> Color(0xFF4CAF50).copy(alpha = 0.9f)
+                                    level < 60 -> Color(0xFFFF9800).copy(alpha = 0.9f)
+                                    else -> Color(0xFFF44336).copy(alpha = 0.9f)
+                                }
                             )
                         ) {
                             Text(
                                 text = "${level.toInt()}%",
                                 color = Color.White,
                                 fontWeight = FontWeight.Bold,
-                                modifier = Modifier.padding(8.dp)
+                                fontSize = 16.sp,
+                                modifier = Modifier.padding(12.dp)
                             )
                         }
                     }
@@ -131,7 +161,7 @@ fun CameraScreenWithFace(
                     ) {
                         Text(
                             text = "📷",
-                            fontSize = 48.sp,
+                            fontSize = 64.sp,
                             color = Color.Gray
                         )
                         
@@ -142,7 +172,7 @@ fun CameraScreenWithFace(
                                 "측정하기 버튼을 눌러 시작하세요" 
                             else 
                                 "카메라 권한을 허용해주세요",
-                            style = MaterialTheme.typography.bodyMedium,
+                            style = MaterialTheme.typography.bodyLarge,
                             color = Color.Gray,
                             textAlign = TextAlign.Center
                         )
@@ -151,7 +181,7 @@ fun CameraScreenWithFace(
             }
         }
         
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(20.dp))
         
         // 측정 가이드
         Card(
@@ -171,7 +201,7 @@ fun CameraScreenWithFace(
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = "• 얼굴을 화면 중앙에 위치시켜주세요\n• 조명이 밝은 곳에서 측정해주세요\n• 카메라를 정면으로 바라봐주세요",
+                    text = "• 얼굴을 화면 중앙에 위치시켜주세요\n• 조명이 밝은 곳에서 측정해주세요\n• 카메라를 정면으로 바라봐주세요\n• 얼굴 박스가 나타나면 측정 완료",
                     fontSize = 14.sp,
                     color = MaterialTheme.colorScheme.onSurface,
                     lineHeight = 20.sp
@@ -179,7 +209,7 @@ fun CameraScreenWithFace(
             }
         }
         
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(20.dp))
         
         // 버튼들
         Row(
@@ -208,7 +238,8 @@ fun CameraScreenWithFace(
                         cameraPermissionState.launchPermissionRequest()
                     }
                 },
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(1f),
+                enabled = !isAnalyzing
             ) {
                 Text(
                     text = when {
@@ -220,7 +251,7 @@ fun CameraScreenWithFace(
             }
         }
         
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(16.dp))
         
         // 면책 고지
         Text(

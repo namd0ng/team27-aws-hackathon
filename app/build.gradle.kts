@@ -80,10 +80,7 @@ dependencies {
     
     // Health Connect
     implementation("androidx.health.connect:connect-client:1.1.0-alpha07")
-    
-    // Health Connect
-    implementation("androidx.health.connect:connect-client:1.1.0-alpha07")
-   
+
     implementation(libs.androidx.navigation.compose)
     
     // Room

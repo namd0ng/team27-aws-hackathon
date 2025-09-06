@@ -9,7 +9,8 @@ import androidx.health.connect.client.time.TimeRangeFilter
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 
-data class HeartRateData(
+// 헬스 커넥트용 HeartRateData (임시)
+data class HealthConnectHeartRateData(
     val bpm: Long,
     val timestamp: Instant
 )
@@ -31,13 +32,13 @@ class HealthConnectManager(private val context: Context) {
         }
     }
     
-    suspend fun getRecentHeartRate(): HeartRateData? {
+    suspend fun getRecentHeartRate(): HealthConnectHeartRateData? {
         return try {
             val now = Instant.now()
             val request = ReadRecordsRequest(
                 recordType = HeartRateRecord::class,
                 timeRangeFilter = TimeRangeFilter.between(
-                    now.minus(1, ChronoUnit.HOURS),
+                    now.minus(24, ChronoUnit.HOURS),
                     now
                 )
             )
@@ -48,14 +49,55 @@ class HealthConnectManager(private val context: Context) {
             if (records.isNotEmpty()) {
                 val latestRecord = records.maxByOrNull { it.startTime }
                 latestRecord?.let { record ->
-                    HeartRateData(
+                    HealthConnectHeartRateData(
                         bpm = record.samples.lastOrNull()?.beatsPerMinute ?: 0L,
                         timestamp = record.startTime
                     )
                 }
+            } else {
+                null // 데이터 없음
+            }
+        } catch (e: Exception) {
+            throw e // 예외를 그대로 전달
+        }
+    }
+    
+    suspend fun getBaselineHeartRate(userAge: Int): Double? {
+        return try {
+            val now = Instant.now()
+            val startTime = now.minus(7, ChronoUnit.DAYS)
+            val endTime = now.minus(1, ChronoUnit.DAYS)
+            
+            val heartRateRequest = ReadRecordsRequest(
+                recordType = HeartRateRecord::class,
+                timeRangeFilter = TimeRangeFilter.between(startTime, endTime)
+            )
+            val heartRateResponse = healthConnectClient.readRecords(heartRateRequest)
+            
+            val normalRange = getNormalHeartRateRange(userAge)
+            
+            val restingHeartRates = heartRateResponse.records.flatMap { record ->
+                record.samples.filter { sample ->
+                    sample.beatsPerMinute in normalRange.first..normalRange.second
+                }
+            }
+            
+            if (restingHeartRates.isNotEmpty()) {
+                restingHeartRates.map { it.beatsPerMinute.toDouble() }.average()
             } else null
         } catch (e: Exception) {
             null
+        }
+    }
+    
+    private fun getNormalHeartRateRange(age: Int): Pair<Int, Int> {
+        return when (age) {
+            in 18..25 -> Pair(60, 100)
+            in 26..35 -> Pair(60, 95)
+            in 36..45 -> Pair(60, 90)
+            in 46..55 -> Pair(60, 85)
+            in 56..65 -> Pair(60, 80)
+            else -> Pair(60, 100) // 기본값
         }
     }
 }
