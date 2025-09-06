@@ -36,7 +36,10 @@ fun RecordDetailDialog(
                 .fillMaxWidth()
                 .fillMaxHeight(0.8f)
                 .padding(16.dp),
-            shape = RoundedCornerShape(16.dp)
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = Color.White
+            )
         ) {
             LazyColumn(
                 modifier = Modifier.padding(24.dp),
@@ -99,17 +102,17 @@ fun RecordDetailDialog(
                 
                 item {
                     Text(
-                        text = "개별 기록",
+                        text = "음주 측정 기록",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.SemiBold
                     )
                 }
                 
-                // 개별 기록 목록
+                // 음주 측정 기록 목록
                 items(records) { record ->
                     Card(
                         colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceVariant
+                            containerColor = Color.White
                         )
                     ) {
                         Column(
