@@ -56,7 +56,8 @@ fun AddRecordDialog(
                 .fillMaxWidth()
                 .fillMaxHeight(0.9f)
                 .padding(16.dp),
-            shape = RoundedCornerShape(16.dp),
+            shape = RoundedCornerShape(16.dp)
+,
             colors = CardDefaults.cardColors(
                 containerColor = MaterialTheme.colorScheme.surface
             )
@@ -292,7 +293,7 @@ fun AddRecordDialog(
                                     pureAlcohol <= if (isMale) 28f else 14f -> DrinkingStatus.APPROPRIATE
                                     pureAlcohol <= if (isMale) 56f else 42f -> DrinkingStatus.CAUTION
                                     pureAlcohol <= if (isMale) 70f else 56f -> DrinkingStatus.EXCESSIVE
-                                    else -> DrinkingStatus.EXCESSIVE
+                                    else -> DrinkingStatus.DANGEROUS
                                 }
                                 
                                 // 랜덤 메시지 선택
