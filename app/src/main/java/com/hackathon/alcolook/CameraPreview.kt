@@ -81,7 +81,7 @@ private class ImageAnalyzer(
     
     override fun analyze(image: ImageProxy) {
         val currentTimestamp = System.currentTimeMillis()
-        if (currentTimestamp - lastAnalyzedTimestamp >= 500) { // 0.5초마다 분석
+        if (currentTimestamp - lastAnalyzedTimestamp >= 1000) { // 1초마다 분석
             Log.d("CameraPreview", "이미지 분석 시작 - 포맷: ${image.format}, 크기: ${image.width}x${image.height}")
             
             val bitmap = imageProxyToBitmap(image)

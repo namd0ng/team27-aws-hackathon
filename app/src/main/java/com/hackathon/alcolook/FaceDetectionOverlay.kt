@@ -18,77 +18,59 @@ import androidx.compose.ui.unit.sp
 @Composable
 fun FaceDetectionOverlay(
     faces: List<FaceBox>,
-    imageWidth: Int,
-    imageHeight: Int,
-    displayWidth: Float,
-    displayHeight: Float,
     modifier: Modifier = Modifier
 ) {
     val textMeasurer = rememberTextMeasurer()
     
     Canvas(modifier = modifier.fillMaxSize()) {
+        val canvasWidth = size.width
+        val canvasHeight = size.height
+        
         faces.forEach { face ->
-            // 더 정확한 좌표 변환 - aspect ratio 유지하면서 중앙 정렬
-            val imageAspectRatio = imageWidth.toFloat() / imageHeight.toFloat()
-            val displayAspectRatio = displayWidth / displayHeight
-            
-            val (actualDisplayWidth, actualDisplayHeight, offsetX, offsetY) = if (imageAspectRatio > displayAspectRatio) {
-                // 이미지가 더 넓음 - 가로를 맞추고 세로 중앙 정렬
-                val scaledHeight = displayWidth / imageAspectRatio
-                val yOffset = (displayHeight - scaledHeight) / 2
-                arrayOf(displayWidth, scaledHeight, 0f, yOffset)
-            } else {
-                // 이미지가 더 높음 - 세로를 맞추고 가로 중앙 정렬
-                val scaledWidth = displayHeight * imageAspectRatio
-                val xOffset = (displayWidth - scaledWidth) / 2
-                arrayOf(scaledWidth, displayHeight, xOffset, 0f)
-            }
-            
-            // 얼굴 박스 좌표 계산 (정확한 비율 적용)
-            val boxLeft = offsetX + (face.left * actualDisplayWidth)
-            val boxTop = offsetY + (face.top * actualDisplayHeight)
-            val boxWidth = face.width * actualDisplayWidth
-            val boxHeight = face.height * actualDisplayHeight
+            // 직접 비율 좌표를 캔버스 크기에 맞춤
+            val boxLeft = face.left * canvasWidth
+            val boxTop = face.top * canvasHeight
+            val boxWidth = face.width * canvasWidth
+            val boxHeight = face.height * canvasHeight
             
             // 얼굴 박스 색상 결정
             val boxColor = when {
-                face.drunkPercentage < 30 -> Color.Green
-                face.drunkPercentage < 60 -> Color.Yellow
-                else -> Color.Red
+                face.drunkPercentage < 30 -> Color(0xFF4CAF50) // Green
+                face.drunkPercentage < 60 -> Color(0xFFFF9800) // Orange
+                else -> Color(0xFFF44336) // Red
             }
             
-            // 얼굴 박스 그리기 (2pt 얇은 선)
+            // 얼굴 박스 그리기 (3dp 두꺼운 선)
             drawRect(
                 color = boxColor,
                 topLeft = Offset(boxLeft, boxTop),
                 size = Size(boxWidth, boxHeight),
-                style = Stroke(width = 2.dp.toPx())
+                style = Stroke(width = 3.dp.toPx())
             )
             
-            // 라벨 텍스트 (Person ID + 퍼센트)
-            val labelText = "${face.personId}: ${face.drunkPercentage}%"
+            // 라벨 텍스트 (퍼센트만 표시)
+            val labelText = "${face.drunkPercentage}%"
             val textStyle = TextStyle(
                 color = Color.White,
-                fontSize = 12.sp,
+                fontSize = 14.sp,
                 fontWeight = FontWeight.Bold
             )
             
             val textLayoutResult = textMeasurer.measure(labelText, textStyle)
-            val textWidth = textLayoutResult.size.width
-            val textHeight = textLayoutResult.size.height
+            val textWidth = textLayoutResult.size.width.toFloat()
+            val textHeight = textLayoutResult.size.height.toFloat()
             
             // 텍스트 배경 박스 (박스 위쪽에 배치)
+            val padding = 8.dp.toPx()
             val textBgLeft = boxLeft
-            val textBgTop = boxTop - textHeight - 8.dp.toPx()
-            val textBgWidth = textWidth + 12.dp.toPx()
-            val textBgHeight = textHeight + 6.dp.toPx()
+            val textBgTop = maxOf(0f, boxTop - textHeight - padding * 2)
+            val textBgWidth = textWidth + padding * 2
+            val textBgHeight = textHeight + padding
             
-            // 화면 경계 체크
-            val finalTextBgTop = if (textBgTop < 0) boxTop + boxHeight + 4.dp.toPx() else textBgTop
-            
+            // 배경 박스 그리기
             drawRect(
                 color = boxColor,
-                topLeft = Offset(textBgLeft, finalTextBgTop),
+                topLeft = Offset(textBgLeft, textBgTop),
                 size = Size(textBgWidth, textBgHeight)
             )
             
@@ -96,10 +78,9 @@ fun FaceDetectionOverlay(
             drawText(
                 textLayoutResult = textLayoutResult,
                 topLeft = Offset(
-                    textBgLeft + 6.dp.toPx(),
-                    finalTextBgTop + 3.dp.toPx()
-                ),
-                color = Color.White
+                    textBgLeft + padding,
+                    textBgTop + padding / 2
+                )
             )
         }
     }

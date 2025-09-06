@@ -206,8 +206,8 @@ class PhotoDrunkDetectionService(private val context: Context) {
             }
         }
         
-        // 사진용: 점수를 2배로 증폭
-        val amplifiedScore = drunkScore * 2f
+        // 사진용: 점수를 4배로 증폭 (역치 2배 낮춤)
+        val amplifiedScore = drunkScore * 4f
         val finalScore = minOf(100, maxOf(0, amplifiedScore.toInt()))
         
         Log.d(TAG, "최종 음주도: ${finalScore}% (원점수: ${drunkScore} → 증폭: ${amplifiedScore})")

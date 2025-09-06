@@ -52,37 +52,50 @@ dependencies {
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
-
-    // Common dependencies
-    implementation(libs.androidx.navigation.compose)
-    implementation(libs.androidx.room.runtime)
-    implementation(libs.androidx.room.ktx)
-    ksp(libs.androidx.room.compiler)
-    implementation(libs.hilt.android)
-    ksp(libs.hilt.compiler)
-    implementation(libs.androidx.hilt.navigation.compose)
-    implementation(libs.androidx.datastore.preferences)
-
-    // Added from dev branch
-    implementation("androidx.compose.material:material-icons-extended:1.5.4")
-    implementation("com.squareup.retrofit2:retrofit:2.9.0")
-    implementation("com.squareup.retrofit2:converter-gson:2.9.0")
-    implementation("com.squareup.okhttp3:logging-interceptor:4.11.0")
-
-    // Added from alldata+calendar-advenced branch
+    
+    // AWS SDK
     implementation("com.amazonaws:aws-android-sdk-rekognition:2.77.0")
     implementation("com.amazonaws:aws-android-sdk-core:2.77.0")
+    
+    // HTTP client for Bedrock API
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
+    implementation("com.amazonaws:aws-android-sdk-core:2.77.0")
+    
+    // JSON parsing
     implementation("org.json:json:20231013")
+    
+    // Camera
     implementation("androidx.camera:camera-camera2:1.3.4")
     implementation("androidx.camera:camera-lifecycle:1.3.4")
     implementation("androidx.camera:camera-view:1.3.4")
+    
+    // Guava for CameraX ListenableFuture
     implementation("com.google.guava:guava:31.1-android")
+    
+    // Permissions
     implementation("com.google.accompanist:accompanist-permissions:0.32.0")
+    
+    // Image loading
     implementation("io.coil-kt:coil-compose:2.5.0")
+    
+    // Health Connect
     implementation("androidx.health.connect:connect-client:1.1.0-alpha07")
 
-    // Test dependencies
+    implementation(libs.androidx.navigation.compose)
+    
+    // Room
+    implementation(libs.androidx.room.runtime)
+    implementation(libs.androidx.room.ktx)
+    ksp(libs.androidx.room.compiler)
+    
+    // Hilt
+    implementation(libs.hilt.android)
+    ksp(libs.hilt.compiler)
+    implementation(libs.androidx.hilt.navigation.compose)
+    
+    // DataStore
+    implementation(libs.androidx.datastore.preferences)
+    
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
