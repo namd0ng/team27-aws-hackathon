@@ -65,9 +65,9 @@
 
 ---
 
-## 5) 데이터 모델(DynamoDB)
+## 5) 데이터 모델(Room, 로컬)
 
-- **Must**: DynamoDB 테이블/리포지토리 구성.
+- **Must**: Room 엔티티/DAO/리포지토리 구성.
 - **DrinkType(enum)**: {BEER, SOJU, WINE, WHISKY, HIGHBALL, COCKTAIL, MAKGEOLLI, OTHER}
 - **DrinkRecord(entity)**
     - `id: Long`, `date: LocalDate`, `type: DrinkType`, `abv: Float?`, `volumeMl: Int?`, `count: Int`, `note: String?`, `analysisProb: Float?`
@@ -81,6 +81,8 @@
 
 ## 6) 권한·보안·정책
 
+- **Must**: **카메라 권한만** 요청. `INTERNET` 권한 **추가 금지**.
+- **Must**: 모든 데이터 **로컬 저장**. **데이터 전체 삭제**(설정 > 데이터 관리) 제공.
 - **Must**: **카메라 및 인터넷 권한** 요청. Amazon Rekognition과 DynamoDB 통신을 위해 필요.
 - **Must**: 데이터는 **DynamoDB**에 저장. **데이터 전체 삭제**(설정 > 데이터 관리) 제공.
 - **Must**: 면책 고지(“의료 목적 아님, **운전 판단 금지**”)를 결과 화면과 도움말에 **상시 표기**.
@@ -89,7 +91,8 @@
 
 ## 7) 기술 스택 & 구조
 
-- **Must**: Kotlin, **Jetpack Compose(Material 3)**, **CameraX**(v1.4.x), **ML Kit(Face Detection)**, **Hilt(DI)**.
+- **Must**: Kotlin, **Jetpack Compose(Material 3)**, **CameraX**(v1.4.x), **ML Kit(Face Detection)**, **Room**, **Hilt(DI)**.
+
 - **Must**: **MVVM + Repository** 아키텍처. ViewModel은 UI State만 노출.
 - **Must**: `IntoxicationPredictor` 를 DI 바인딩(기본=Dummy). 실제 모델 도입 시 **교체만**으로 동작해야 함.
 - **Should**: strings.xml/색상 토큰/테마 분리, 패키지 계층(`ui/`, `data/`, `domain/`) 유지.
@@ -134,6 +137,7 @@
 - CameraX(Preview/Capture): https://developer.android.com/training/camerax
 - ML Kit Face Detection: https://developers.google.com/ml-kit/vision/face-detection/android
 - Jetpack Compose(Material 3): https://developer.android.com/jetpack/compose
+- Room: https://developer.android.com/training/data-storage/room
 
 - Hilt: https://developer.android.com/training/dependency-injection/hilt
 

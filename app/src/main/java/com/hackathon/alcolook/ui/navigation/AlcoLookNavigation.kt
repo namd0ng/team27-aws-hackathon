@@ -1,5 +1,6 @@
 package com.hackathon.alcolook.ui.navigation
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -28,14 +29,14 @@ fun AlcoLookNavigation() {
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
-    
+
     // 인증 화면에서는 하단 네비게이션 숨기기
     val showBottomBar = currentDestination?.route in listOf(
         AlcoLookDestinations.HOME.route,
         AlcoLookDestinations.CALENDAR.route,
         AlcoLookDestinations.SETTINGS.route
     )
-    
+
     Scaffold(
         containerColor = AppBackground,
         bottomBar = {
@@ -47,7 +48,7 @@ fun AlcoLookNavigation() {
                 ) {
                     AlcoLookDestinations.entries.forEach { destination ->
                         val isSelected = currentDestination?.hierarchy?.any { it.route == destination.route } == true
-                        
+
                         NavigationBarItem(
                             icon = {
                                 Text(
@@ -59,7 +60,7 @@ fun AlcoLookNavigation() {
                                     fontSize = 24.sp
                                 )
                             },
-                            label = { 
+                            label = {
                                 Text(
                                     text = destination.title,
                                     fontSize = 10.sp,

@@ -83,9 +83,28 @@ AlcoLook은 **3가지 센서 데이터를 활용한 종합적인 음주 상태 �
 
 ### 센서 데이터 구조
 
-  - `FaceAnalysisData`: 신뢰도, 눈/입 상태, 얼굴 기울기 등
-  - `HeartRateData`: 분당 심박수(BPM), 심박 변이도 등
-  - `GyroscopeData`: 흔들림 강도, 안정성 점수 등
+```kotlin
+// 얼굴 분석 결과
+data class FaceAnalysisData(
+    val confidence: Float,      // 신뢰도 (0.0~1.0)
+    val eyesClosed: Boolean,    // 눈 감김 여부
+    val mouthOpen: Boolean,     // 입 벌어짐 여부
+    val faceAngle: Float        // 얼굴 기울기
+)
+
+// 심박수 데이터
+data class HeartRateData(
+    val bpm: Int,              // 분당 심박수
+    val variability: Float,    // 심박 변이도
+    val measurementDuration: Int // 측정 시간(초)
+)
+
+// 자이로센서 데이터
+data class GyroscopeData(
+    val shakingIntensity: Float,  // 흔들림 강도
+    val stabilityScore: Float     // 안정성 점수
+)
+```
 
 ### 음주 상태 분류
 
