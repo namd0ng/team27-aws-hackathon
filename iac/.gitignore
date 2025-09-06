@@ -1,0 +1,23 @@
+# Terraform
+terraform/.terraform/
+terraform/.terraform.lock.hcl
+terraform/terraform.tfstate*
+terraform/*.tfplan
+terraform/*.zip
+
+# CDK
+cdk/node_modules/
+cdk/cdk.out/
+cdk/*.js
+cdk/*.d.ts
+
+# AWS
+.aws/
+*.pem
+
+# Logs
+*.log
+
+# Environment files
+.env
+.env.local
