@@ -16,6 +16,9 @@ class PhotoDrunkDetectionService(private val context: Context) {
     }
     
     suspend fun detectDrunkLevel(bitmap: Bitmap): DrunkDetectionResult = withContext(Dispatchers.IO) {
+        // 사진 모드로 DrunkDetectionService 호출
+        val drunkDetectionService = DrunkDetectionService(context)
+        return@withContext drunkDetectionService.detectDrunkLevel(bitmap, isRealTime = false)
         val rekognitionClient = AwsConfig.getRekognitionClient(context)
         
         Log.d(TAG, "=== 사진 분석 시작 ===")
