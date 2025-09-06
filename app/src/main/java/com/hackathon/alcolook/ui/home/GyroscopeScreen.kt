@@ -78,55 +78,46 @@ fun GyroscopeScreen(
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text("👤", fontSize = 20.sp)
                         Text(
-                            text = if (faceAnalysisResult != null) "완료" else "미완료",
+                            text = if (faceAnalysisResult != null) "완료" else "대기",
                             fontSize = 12.sp,
                             color = if (faceAnalysisResult != null) 
                                 MaterialTheme.colorScheme.primary 
-                            else 
-                                MaterialTheme.colorScheme.onSurfaceVariant
+                            else MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
-                    
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text("❤️", fontSize = 20.sp)
                         Text(
-                            text = if (heartRateData != null) "완료" else "건너뜀",
+                            text = if (heartRateData != null) "완료" else "대기",
                             fontSize = 12.sp,
                             color = if (heartRateData != null) 
                                 MaterialTheme.colorScheme.primary 
-                            else 
-                                MaterialTheme.colorScheme.onSurfaceVariant
+                            else MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
-                    
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("🚶", fontSize = 20.sp)
+                        Text("📱", fontSize = 20.sp)
                         Text(
                             text = if (gyroscopeData != null) "완료" else "진행중",
                             fontSize = 12.sp,
                             color = if (gyroscopeData != null) 
                                 MaterialTheme.colorScheme.primary 
-                            else 
-                                MaterialTheme.colorScheme.secondary
+                            else MaterialTheme.colorScheme.tertiary
                         )
                     }
                 }
             }
         }
         
-        Spacer(modifier = Modifier.height(20.dp))
+        Spacer(modifier = Modifier.height(24.dp))
         
-        // 측정 영역 또는 가이드
+        // 메인 측정 영역
         Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(if (showGuide) 350.dp else 250.dp),
+                .height(280.dp),
             colors = CardDefaults.cardColors(
-                containerColor = when {
-                    gyroscopeData != null -> MaterialTheme.colorScheme.surface
-                    isTestRunning -> MaterialTheme.colorScheme.primaryContainer
-                    else -> MaterialTheme.colorScheme.surfaceVariant
-                }
+                containerColor = MaterialTheme.colorScheme.surface
             ),
             elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
         ) {
@@ -136,15 +127,14 @@ fun GyroscopeScreen(
             ) {
                 when {
                     showGuide && !isTestStarted -> {
-                        // 측정 가이드 표시
+                        // 가이드 화면
                         Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            modifier = Modifier.padding(16.dp)
+                            horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             Text(
-                                text = "🚶♂️ 균형감각 측정 방법",
+                                text = "균형감각 측정 방법",
                                 fontSize = 18.sp,
-                                fontWeight = FontWeight.Bold,
+                                fontWeight = FontWeight.SemiBold,
                                 color = MaterialTheme.colorScheme.primary
                             )
                             
@@ -156,14 +146,67 @@ fun GyroscopeScreen(
                                 fontSize = 64.sp
                             )
                             
-                            Spacer(modifier = Modifier.height(12.dp))
+                            Spacer(modifier = Modifier.height(16.dp))
                             
                             Text(
-                                text = "1. 양팔을 좌우로 벌리세요\n2. 한 손에 스마트폰을 쥐세요\n3. 발끝을 붙여서 일직선으로 걸으세요\n4. 10걸음 정도 천천히 걸어보세요",
+                                text = "1. 핸드폰을 손에 들고 서세요",
                                 fontSize = 14.sp,
-                                textAlign = TextAlign.Center,
-                                lineHeight = 20.sp,
-                                color = MaterialTheme.colorScheme.onSurface
+                                textAlign = TextAlign.Center
+                            )
+                            Text(
+                                text = "2. 눈을 감고 10초간 제자리에 서세요",
+                                fontSize = 14.sp,
+                                textAlign = TextAlign.Center
+                            )
+                            Text(
+                                text = "3. 흔들림이 적을수록 좋은 결과입니다",
+                                fontSize = 14.sp,
+                                textAlign = TextAlign.Center
+                            )
+                        }
+                    }
+                    
+                    countdown > 0 -> {
+                        // 카운트다운
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text(
+                                text = "준비하세요",
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Text(
+                                text = countdown.toString(),
+                                fontSize = 72.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
+                    
+                    isTestRunning -> {
+                        // 측정 중
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text(
+                                text = "측정 중...",
+                                fontSize = 20.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                            Spacer(modifier = Modifier.height(16.dp))
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(48.dp),
+                                strokeWidth = 4.dp
+                            )
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Text(
+                                text = "눈을 감고 제자리에 서세요",
+                                fontSize = 14.sp,
+                                textAlign = TextAlign.Center
                             )
                         }
                     }
@@ -182,151 +225,45 @@ fun GyroscopeScreen(
                             
                             Spacer(modifier = Modifier.height(16.dp))
                             
-                            val resultEmoji = when (testResult) {
-                                WalkingTestResult.STABLE -> "✅"
-                                WalkingTestResult.SLIGHTLY_UNSTABLE -> "⚠️"
-                                WalkingTestResult.UNSTABLE -> "❌"
-                                else -> "📊"
-                            }
-                            
                             Text(
-                                text = resultEmoji,
+                                text = "📊",
                                 fontSize = 48.sp
                             )
+                            
                             Spacer(modifier = Modifier.height(8.dp))
                             
-                            val resultText = when (testResult) {
-                                WalkingTestResult.STABLE -> "안정적인 균형감각"
-                                WalkingTestResult.SLIGHTLY_UNSTABLE -> "약간 불안정한 균형"
-                                WalkingTestResult.UNSTABLE -> "불안정한 균형감각"
-                                else -> "측정 완료"
-                            }
-                            
                             Text(
-                                text = resultText,
-                                fontSize = 18.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurface,
-                                textAlign = TextAlign.Center
+                                text = "흔들림 강도: ${String.format("%.2f", gyroscopeData?.shakingIntensity ?: 0f)}",
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Medium
                             )
                             
-                            Spacer(modifier = Modifier.height(12.dp))
+                            Text(
+                                text = "안정성 점수: ${String.format("%.1f", (gyroscopeData?.stabilityScore ?: 0f) * 100)}%",
+                                fontSize = 14.sp
+                            )
                             
-                            Text(
-                                text = "흔들림 강도: ${String.format("%.2f", gyroscopeData!!.shakingIntensity)}",
-                                fontSize = 14.sp,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            Text(
-                                text = "안정성 점수: ${String.format("%.2f", gyroscopeData!!.stabilityScore)}",
-                                fontSize = 14.sp,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
-                    
-                    isTestRunning -> {
-                        // 측정 중
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            if (countdown > 0) {
+                            testResult?.let { result ->
+                                val resultText = when (result) {
+                                    WalkingTestResult.STABLE -> "안정적인 균형감각"
+                                    WalkingTestResult.SLIGHTLY_UNSTABLE -> "약간 불안정한 균형"
+                                    WalkingTestResult.UNSTABLE -> "불안정한 균형감각"
+                                    else -> "측정 완료"
+                                }
+                                
                                 Text(
-                                    text = countdown.toString(),
-                                    fontSize = 72.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.primary
-                                )
-                                Text(
-                                    text = "측정 시작까지",
-                                    fontSize = 16.sp
-                                )
-                            } else {
-                                CircularProgressIndicator(
-                                    modifier = Modifier.size(64.dp),
-                                    strokeWidth = 6.dp
-                                )
-                                Spacer(modifier = Modifier.height(16.dp))
-                                Text(
-                                    text = "🚶♂️ 지금 천천히 걸어보세요!",
-                                    fontSize = 18.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    textAlign = TextAlign.Center,
-                                    color = MaterialTheme.colorScheme.primary
-                                )
-                                Spacer(modifier = Modifier.height(8.dp))
-                                Text(
-                                    text = "발끝을 붙여서 일직선으로\n10걸음 정도 걸어주세요",
-                                    fontSize = 14.sp,
-                                    textAlign = TextAlign.Center,
-                                    lineHeight = 20.sp,
-                                    color = MaterialTheme.colorScheme.onSurface
+                                    text = resultText,
+                                    fontSize = 12.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
-                        }
-                    }
-                    
-                    else -> {
-                        // 측정 대기
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Text(
-                                text = "🚶♂️",
-                                fontSize = 64.sp
-                            )
-                            Spacer(modifier = Modifier.height(16.dp))
-                            Text(
-                                text = "균형감각 측정 준비",
-                                fontSize = 18.sp,
-                                fontWeight = FontWeight.Medium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Text(
-                                text = "위 가이드를 참고하여 자세를 준비해주세요",
-                                fontSize = 14.sp,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                textAlign = TextAlign.Center
-                            )
                         }
                     }
                 }
             }
         }
         
-        Spacer(modifier = Modifier.height(16.dp))
-        
-        // 측정 상태에 따른 안내 메시지
-        if (isTestRunning && countdown == 0) {
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer
-                )
-            ) {
-                Column(
-                    modifier = Modifier.padding(16.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(
-                        text = "⏱️ 측정 중 (10초)",
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = "자연스럽게 걸어주세요. 중간에 멈추지 마세요!",
-                        fontSize = 14.sp,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer,
-                        textAlign = TextAlign.Center
-                    )
-                }
-            }
-        }
-        
-        Spacer(modifier = Modifier.weight(1f))
+        Spacer(modifier = Modifier.height(24.dp))
         
         // 버튼들
         Row(
@@ -377,75 +314,35 @@ fun GyroscopeScreen(
                             isTestRunning = true
                             gyroscopeManager.startRecording { result ->
                                 testResult = result
-                                
-                                // 결과를 GyroscopeData로 변환 (실제 센서 데이터 기반)
-                                gyroscopeData = when (result) {
-                                    WalkingTestResult.STABLE -> {
-                                        val shakingIntensity = 0.1f + (Math.random() * 0.2f).toFloat() // 0.1~0.3
-                                        val averageMovement = 0.05f + (Math.random() * 0.1f).toFloat() // 0.05~0.15
-                                        val peakMovement = 0.2f + (Math.random() * 0.2f).toFloat() // 0.2~0.4
-                                        val stabilityScore = 0.8f + (Math.random() * 0.2f).toFloat() // 0.8~1.0
-                                        
-                                        GyroscopeData(
-                                            shakingIntensity = shakingIntensity,
-                                            averageMovement = averageMovement,
-                                            peakMovement = peakMovement,
-                                            stabilityScore = stabilityScore
-                                        )
-                                    }
-                                    WalkingTestResult.SLIGHTLY_UNSTABLE -> {
-                                        val shakingIntensity = 0.3f + (Math.random() * 0.3f).toFloat() // 0.3~0.6
-                                        val averageMovement = 0.2f + (Math.random() * 0.2f).toFloat() // 0.2~0.4
-                                        val peakMovement = 0.4f + (Math.random() * 0.3f).toFloat() // 0.4~0.7
-                                        val stabilityScore = 0.4f + (Math.random() * 0.3f).toFloat() // 0.4~0.7
-                                        
-                                        GyroscopeData(
-                                            shakingIntensity = shakingIntensity,
-                                            averageMovement = averageMovement,
-                                            peakMovement = peakMovement,
-                                            stabilityScore = stabilityScore
-                                        )
-                                    }
-                                    WalkingTestResult.UNSTABLE -> {
-                                        val shakingIntensity = 0.6f + (Math.random() * 0.4f).toFloat() // 0.6~1.0
-                                        val averageMovement = 0.4f + (Math.random() * 0.4f).toFloat() // 0.4~0.8
-                                        val peakMovement = 0.7f + (Math.random() * 0.3f).toFloat() // 0.7~1.0
-                                        val stabilityScore = 0.1f + (Math.random() * 0.3f).toFloat() // 0.1~0.4
-                                        
-                                        GyroscopeData(
-                                            shakingIntensity = shakingIntensity,
-                                            averageMovement = averageMovement,
-                                            peakMovement = peakMovement,
-                                            stabilityScore = stabilityScore
-                                        )
-                                    }
-                                    else -> {
-                                        val shakingIntensity = 0.3f + (Math.random() * 0.3f).toFloat()
-                                        val averageMovement = 0.2f + (Math.random() * 0.2f).toFloat()
-                                        val peakMovement = 0.4f + (Math.random() * 0.3f).toFloat()
-                                        val stabilityScore = 0.5f + (Math.random() * 0.3f).toFloat()
-                                        
-                                        GyroscopeData(
-                                            shakingIntensity = shakingIntensity,
-                                            averageMovement = averageMovement,
-                                            peakMovement = peakMovement,
-                                            stabilityScore = stabilityScore
-                                        )
-                                    }
-                                }
-                                
+                                gyroscopeData = com.hackathon.alcolook.data.GyroscopeData(
+                                    shakingIntensity = when (result) {
+                                        WalkingTestResult.STABLE -> 0.1f
+                                        WalkingTestResult.SLIGHTLY_UNSTABLE -> 0.5f
+                                        WalkingTestResult.UNSTABLE -> 0.9f
+                                        else -> 0.3f
+                                    },
+                                    stabilityScore = when (result) {
+                                        WalkingTestResult.STABLE -> 0.9f
+                                        WalkingTestResult.SLIGHTLY_UNSTABLE -> 0.6f
+                                        WalkingTestResult.UNSTABLE -> 0.3f
+                                        else -> 0.5f
+                                    },
+                                    averageMovement = 0.2f,
+                                    peakMovement = 0.8f
+                                )
                                 isTestRunning = false
                             }
                             
-                            // 10초 후 자동 완료
+                            // 10초 후 자동 정지
                             delay(10000)
                             if (isTestRunning) {
                                 gyroscopeManager.stopRecording()
                             }
                         }
                     } else if (isTestRunning) {
-                        // 측정 완료
+                        // 측정 중단
                         gyroscopeManager.stopRecording()
+                        isTestRunning = false
                     }
                 },
                 enabled = !isTestRunning || isTestRunning,
@@ -454,8 +351,8 @@ fun GyroscopeScreen(
                 Text(
                     text = when {
                         !isTestStarted -> "측정 시작"
-                        isTestRunning -> "측정 완료"
-                        else -> "측정 완료됨"
+                        isTestRunning -> "측정 중"
+                        else -> "측정 준비 중"
                     },
                     fontSize = 16.sp,
                     fontWeight = FontWeight.SemiBold
@@ -468,20 +365,13 @@ fun GyroscopeScreen(
             Spacer(modifier = Modifier.height(12.dp))
             Button(
                 onClick = { onNextClick(gyroscopeData) },
-                modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primary
-                )
+                modifier = Modifier.fillMaxWidth()
             ) {
-                Text(
-                    text = "종합 분석 결과 보기",
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold
-                )
+                Text("다음으로")
             }
         }
         
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.weight(1f))
         
         // 면책 고지
         Text(
