@@ -598,14 +598,18 @@ private fun StatisticsContent(
     val progressValue = if (selectedPeriod == 0) {
         // 주간 진행률
         val weeklyAlcohol = weeklyStats.totalStandardDrinks * 8f
-        val weeklyLimit = if (isMale) 196f else 98f // 주간 적정 한계
-        (weeklyAlcohol / weeklyLimit).coerceAtMost(1f)
+        val weeklyLimit = if (isMale) 196f else 98f
+        val result = if (weeklyLimit > 0f) (weeklyAlcohol / weeklyLimit).coerceIn(0f, 1f) else 0f
+        println("DEBUG: weeklyAlcohol=$weeklyAlcohol, weeklyLimit=$weeklyLimit, progressValue=$result")
+        result
     } else {
         // 월간 진행률
         val monthlyAlcohol = monthlyStats.totalStandardDrinks * 8f
         val daysInMonth = java.time.LocalDate.now().lengthOfMonth()
         val monthlyLimit = if (isMale) (28f * daysInMonth) else (14f * daysInMonth)
-        (monthlyAlcohol / monthlyLimit).coerceAtMost(1f)
+        val result = if (monthlyLimit > 0f) (monthlyAlcohol / monthlyLimit).coerceIn(0f, 1f) else 0f
+        println("DEBUG: monthlyAlcohol=$monthlyAlcohol, monthlyLimit=$monthlyLimit, progressValue=$result")
+        result
     }
     
     Column(
@@ -746,7 +750,7 @@ private fun StatisticsContent(
                 Spacer(modifier = Modifier.height(8.dp))
                 
                 LinearProgressIndicator(
-                    progress = progressValue,
+                    progress = if (progressValue.isNaN() || progressValue.isInfinite()) 0f else progressValue.coerceIn(0f, 1f),
                     modifier = Modifier.fillMaxWidth(),
                     color = when(currentHealthStatus) {
                         DrinkingStatus.APPROPRIATE -> Color(0xFF4CAF50)
