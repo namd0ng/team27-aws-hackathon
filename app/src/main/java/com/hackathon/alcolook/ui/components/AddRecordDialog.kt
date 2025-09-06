@@ -10,6 +10,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
@@ -341,10 +342,10 @@ fun AddRecordDialog(
                     shape = RoundedCornerShape(16.dp),
                     colors = CardDefaults.cardColors(
                         containerColor = when(resultStatus) {
-                            DrinkingStatus.APPROPRIATE -> androidx.compose.ui.graphics.Color.Green.copy(alpha = 0.7f)
-                            DrinkingStatus.CAUTION -> androidx.compose.ui.graphics.Color.Yellow.copy(alpha = 0.7f)
-                            DrinkingStatus.EXCESSIVE -> androidx.compose.ui.graphics.Color.Red.copy(alpha = 0.7f)
-                            DrinkingStatus.DANGEROUS -> androidx.compose.ui.graphics.Color.Black.copy(alpha = 0.7f)
+                            DrinkingStatus.APPROPRIATE -> Color(0xFFE8F5E8)
+                            DrinkingStatus.CAUTION -> Color(0xFFFFF4E5)
+                            DrinkingStatus.EXCESSIVE -> Color(0xFFFDEBEC)
+                            DrinkingStatus.DANGEROUS -> Color(0xFFFFE0E0)
                         }
                     )
                 ) {
@@ -369,9 +370,9 @@ fun AddRecordDialog(
                             style = MaterialTheme.typography.headlineSmall,
                             fontWeight = FontWeight.Bold,
                             color = when(resultStatus) {
-                                DrinkingStatus.APPROPRIATE -> androidx.compose.ui.graphics.Color.Green
-                                DrinkingStatus.CAUTION -> androidx.compose.ui.graphics.Color(0xFFFF9800)
-                                DrinkingStatus.EXCESSIVE -> androidx.compose.ui.graphics.Color.Red
+                                DrinkingStatus.APPROPRIATE -> Color.Black
+                                DrinkingStatus.CAUTION -> Color.Black
+                                DrinkingStatus.EXCESSIVE -> Color.Black
                                 DrinkingStatus.DANGEROUS -> androidx.compose.ui.graphics.Color.Black
                             }
                         )
