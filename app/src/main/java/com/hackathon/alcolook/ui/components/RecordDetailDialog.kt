@@ -71,15 +71,16 @@ fun RecordDetailDialog(
                             Text(
                                 text = "일일 요약",
                                 style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.SemiBold
+                                fontWeight = FontWeight.SemiBold,
+                                color = Color.Black,
                             )
                             Spacer(modifier = Modifier.height(8.dp))
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceBetween
                             ) {
-                                Text("총 음주량: ${String.format("%.1f", totalAlcohol)}g")
-                                Text("표준잔수: ${String.format("%.1f", totalStandardDrinks)}잔")
+                                Text("총 음주량: ${String.format("%.1f", totalAlcohol)}g", color = Color.Black)
+                                Text("표준잔수: ${String.format("%.1f", totalStandardDrinks)}잔", color = Color.Black)
                             }
                             Text(
                                 text = "상태: ${when(dailyStatus) {
@@ -88,13 +89,7 @@ fun RecordDetailDialog(
                                     DrinkingStatus.EXCESSIVE -> "과음"
                                     DrinkingStatus.DANGEROUS -> "위험"
                                 }}",
-                                fontWeight = FontWeight.SemiBold,
-                                color = when(dailyStatus) {
-                                    DrinkingStatus.APPROPRIATE -> Color(0xFFE8F5E8)
-                                    DrinkingStatus.CAUTION -> Color(0xFFFFF4E5)
-                                    DrinkingStatus.EXCESSIVE -> Color(0xFFFDEBEC)
-                                    DrinkingStatus.DANGEROUS -> Color(0xFFFFE0E0)
-                                }
+                                fontWeight = FontWeight.SemiBold
                             )
                         }
                     }
