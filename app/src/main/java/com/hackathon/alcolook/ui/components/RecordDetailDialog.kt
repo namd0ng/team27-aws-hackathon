@@ -36,12 +36,16 @@ fun RecordDetailDialog(
                 .fillMaxWidth()
                 .fillMaxHeight(0.8f)
                 .padding(16.dp),
-            shape = RoundedCornerShape(16.dp)
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = Color.White
+            )
         ) {
             LazyColumn(
                 modifier = Modifier.padding(24.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
+                // 헤더
                 item {
                     Text(
                         text = "${selectedDate.format(DateTimeFormatter.ofPattern("M월 d일"))} 상세 기록",
@@ -49,12 +53,22 @@ fun RecordDetailDialog(
                         fontWeight = FontWeight.Bold
                     )
                 }
-                
-                // 요약 정보
+
+                // 일일 요약 제목
+                item {
+                    Text(
+                        text = "일일 요약",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+
+                // 일일 요약 카드
                 item {
                     Card(
+                        modifier = Modifier.fillMaxWidth(),
                         colors = CardDefaults.cardColors(
-                            containerColor = when(dailyStatus) {
+                            containerColor = when (dailyStatus) {
                                 DrinkingStatus.APPROPRIATE -> Color(0xFFE8F5E8)
                                 DrinkingStatus.CAUTION -> Color(0xFFFFF4E5)
                                 DrinkingStatus.EXCESSIVE -> Color(0xFFFDEBEC)
@@ -62,59 +76,36 @@ fun RecordDetailDialog(
                             }
                         )
                     ) {
-                        Column(
-                            modifier = Modifier.padding(16.dp)
-                        ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
                             Text(
-                                text = "일일 요약",
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.SemiBold
+                                text = "총 음주량: ${String.format("%.1f", totalAlcohol)}g",
+                                color = Color.Black
                             )
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                Text("총 음주량: ${String.format("%.1f", totalAlcohol)}g")
-                                Text("표준잔수: ${String.format("%.1f", totalStandardDrinks)}잔")
-                            }
                             Text(
-                                text = "상태: ${when(dailyStatus) {
-                                    DrinkingStatus.APPROPRIATE -> "적정"
-                                    DrinkingStatus.CAUTION -> "주의"
-                                    DrinkingStatus.EXCESSIVE -> "과음"
-                                    DrinkingStatus.DANGEROUS -> "위험"
-                                }}",
-                                fontWeight = FontWeight.SemiBold,
-                                color = when(dailyStatus) {
-                                    DrinkingStatus.APPROPRIATE -> Color(0xFFE8F5E8)
-                                    DrinkingStatus.CAUTION -> Color(0xFFFFF4E5)
-                                    DrinkingStatus.EXCESSIVE -> Color(0xFFFDEBEC)
-                                    DrinkingStatus.DANGEROUS -> Color(0xFFFFE0E0)
-                                }
+                                text = "표준잔수: ${String.format("%.1f", totalStandardDrinks)}잔",
+                                color = Color.Black
                             )
                         }
                     }
                 }
-                
+
+                // 측정 기록 제목
                 item {
                     Text(
-                        text = "개별 기록",
+                        text = "음주 측정 기록",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.SemiBold
                     )
                 }
-                
-                // 개별 기록 목록
+
+                // 측정 기록 목록
                 items(records) { record ->
                     Card(
                         colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceVariant
+                            containerColor = Color.White
                         )
                     ) {
-                        Column(
-                            modifier = Modifier.padding(16.dp)
-                        ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -139,15 +130,23 @@ fun RecordDetailDialog(
                                         )
                                     }
                                 }
-                                
-                                TextButton(onClick = { onDeleteRecord(record) }) {
-                                    Text("삭제", fontSize = 12.sp, color = androidx.compose.ui.graphics.Color.Red)
+
+                                Row {
+                                    if (onEditRecord != null) {
+                                        TextButton(onClick = { onEditRecord(record) }) {
+                                            Text("수정", fontSize = 12.sp)
+                                        }
+                                    }
+                                    TextButton(onClick = { onDeleteRecord(record) }) {
+                                        Text("삭제", fontSize = 12.sp, color = Color.Red)
+                                    }
                                 }
                             }
                         }
                     }
                 }
-                
+
+                // 닫기 버튼
                 item {
                     Button(
                         onClick = onDismiss,
