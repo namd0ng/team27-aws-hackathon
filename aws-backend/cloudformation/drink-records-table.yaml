@@ -1,0 +1,28 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'AlcoLook - Drink Records Table'
+
+Resources:
+  DrinkRecordsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: alcolook-drink-records
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: userId
+          AttributeType: S
+        - AttributeName: recordId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: userId
+          KeyType: HASH
+        - AttributeName: recordId
+          KeyType: RANGE
+      StreamSpecification:
+        StreamViewType: NEW_AND_OLD_IMAGES
+
+Outputs:
+  DrinkRecordsTableName:
+    Description: 'Name of the drink records table'
+    Value: !Ref DrinkRecordsTable
+    Export:
+      Name: !Sub '${AWS::StackName}-DrinkRecordsTable'

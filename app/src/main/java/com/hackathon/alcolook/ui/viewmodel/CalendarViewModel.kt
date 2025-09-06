@@ -1,12 +1,12 @@
 package com.hackathon.alcolook.ui.viewmodel
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.hackathon.alcolook.data.model.*
 import com.hackathon.alcolook.data.repository.DrinkRecordRepository
-import com.hackathon.alcolook.data.repository.UserProfileRepository
-import com.hackathon.alcolook.domain.usecase.DrinkCalculationUseCase
-import com.hackathon.alcolook.domain.usecase.DrinkingStatus
+import com.hackathon.alcolook.data.AuthManager
+import okhttp3.MediaType.Companion.toMediaType
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -17,8 +17,7 @@ import javax.inject.Inject
 @HiltViewModel
 class CalendarViewModel @Inject constructor(
     private val drinkRecordRepository: DrinkRecordRepository,
-    private val userProfileRepository: UserProfileRepository,
-    private val drinkCalculationUseCase: DrinkCalculationUseCase
+    private val authManager: AuthManager
 ) : ViewModel() {
 
     private val _selectedDate = MutableStateFlow(LocalDate.now())
@@ -33,37 +32,38 @@ class CalendarViewModel @Inject constructor(
     private val _selectedPeriod = MutableStateFlow(0) // 0: 주간, 1: 월간
     val selectedPeriod = _selectedPeriod.asStateFlow()
 
-    val userProfile = userProfileRepository.userProfile
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(), UserProfile())
+    // 모든 기록
+    val allRecords = drinkRecordRepository.records
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(), emptyList())
 
     // 현재 월의 모든 기록
-    val monthlyRecords = currentMonth.flatMapLatest { month ->
+    val monthlyRecords = combine(allRecords, currentMonth) { records, month ->
         val startDate = month.atDay(1)
         val endDate = month.atEndOfMonth()
-        drinkRecordRepository.getRecordsBetweenDates(startDate, endDate)
+        records.filter { it.date >= startDate && it.date <= endDate }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(), emptyList())
 
     // 선택된 날짜의 기록
-    val selectedDateRecords = selectedDate.flatMapLatest { date ->
-        drinkRecordRepository.getRecordsByDate(date)
+    val selectedDateRecords = combine(allRecords, selectedDate) { records, date ->
+        records.filter { it.date == date }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(), emptyList())
 
     // 날짜별 상태 맵
-    val dailyStatusMap = combine(monthlyRecords, userProfile) { records, profile ->
+    val dailyStatusMap = monthlyRecords.map { records ->
         records.groupBy { it.date }
             .mapValues { (_, dayRecords) ->
-                drinkCalculationUseCase.getDailyStatus(dayRecords, profile)
+                getDailyStatus(dayRecords)
             }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(), emptyMap())
 
     // 선택된 날짜 요약
-    val selectedDateSummary = combine(selectedDateRecords, userProfile) { records, profile ->
+    val selectedDateSummary = selectedDateRecords.map { records ->
         DailySummary(
             date = selectedDate.value,
             records = records,
             totalStandardDrinks = records.sumOf { it.getStandardDrinks().toDouble() }.toFloat(),
             totalVolumeMl = records.sumOf { it.totalVolumeMl },
-            status = drinkCalculationUseCase.getDailyStatus(records, profile)
+            status = getDailyStatus(records)
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(), 
         DailySummary(LocalDate.now(), emptyList(), 0f, 0, DrinkingStatus.NORMAL))
@@ -93,16 +93,46 @@ class CalendarViewModel @Inject constructor(
         note: String? = null
     ) {
         viewModelScope.launch {
-            val record = drinkCalculationUseCase.createDrinkRecord(
+            val totalVolume = customVolumeMl ?: (unit.getVolumeMl(type) * quantity)
+            val record = DrinkRecord(
                 date = selectedDate.value,
                 type = type,
                 unit = unit,
                 quantity = quantity,
-                customVolumeMl = customVolumeMl,
-                customAbv = customAbv,
+                totalVolumeMl = totalVolume,
+                abv = customAbv,
                 note = note
             )
-            drinkRecordRepository.insertRecord(record)
+            
+            Log.d("CalendarViewModel", "Adding drink record: $record")
+            drinkRecordRepository.addRecord(record)
+        }
+    }
+    
+    fun simpleTest() {
+        viewModelScope.launch {
+            Log.d("CalendarViewModel", "🔥 Simple test starting...")
+            
+            try {
+                val json = """{"userId":"app-test","date":"2024-01-20","drinkType":"BEER","count":1,"volumeMl":355,"abv":4.5,"note":"simple test"}"""
+                
+                val client = okhttp3.OkHttpClient()
+                val body = okhttp3.RequestBody.create(
+                    null, 
+                    json
+                )
+                val request = okhttp3.Request.Builder()
+                    .url("https://iql82o9kv2.execute-api.us-east-1.amazonaws.com/prod/records")
+                    .addHeader("Content-Type", "application/json")
+                    .post(body)
+                    .build()
+                
+                val response = client.newCall(request).execute()
+                Log.d("CalendarViewModel", "📱 Response: ${response.code} - ${response.body?.string()}")
+                
+            } catch (e: Exception) {
+                Log.e("CalendarViewModel", "💥 Error: $e")
+            }
         }
     }
 
@@ -112,9 +142,18 @@ class CalendarViewModel @Inject constructor(
         }
     }
 
-    fun deleteDrinkRecord(record: DrinkRecord) {
+    fun deleteDrinkRecord(recordId: Long) {
         viewModelScope.launch {
-            drinkRecordRepository.deleteRecord(record)
+            drinkRecordRepository.deleteRecord(recordId)
+        }
+    }
+
+    private fun getDailyStatus(records: List<DrinkRecord>): DrinkingStatus {
+        val totalStandardDrinks = records.sumOf { it.getStandardDrinks().toDouble() }.toFloat()
+        return when {
+            totalStandardDrinks <= 2f -> DrinkingStatus.NORMAL
+            totalStandardDrinks <= 5f -> DrinkingStatus.WARNING
+            else -> DrinkingStatus.DANGER
         }
     }
 }

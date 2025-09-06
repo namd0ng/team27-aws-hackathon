@@ -28,7 +28,6 @@ import com.hackathon.alcolook.data.model.DrinkType
 import com.hackathon.alcolook.data.model.DrinkUnit
 import com.hackathon.alcolook.data.model.DrinkingStatus
 import com.hackathon.alcolook.ui.viewmodel.SimpleCalendarViewModel
-import com.hackathon.alcolook.ui.viewmodel.CalendarViewModel
 import com.hackathon.alcolook.ui.components.AddRecordDialog
 import com.hackathon.alcolook.ui.components.DrinkChart
 import java.time.LocalDate
@@ -39,17 +38,17 @@ fun CalendarDayCell(
     day: Int,
     isToday: Boolean = false,
     isSelected: Boolean = false,
-    status: DrinkingStatus = DrinkingStatus.NORMAL,
+    status: DrinkingStatus = DrinkingStatus.APPROPRIATE,
     hasRecord: Boolean = false,
     onClick: () -> Unit = {}
 ) {
     val backgroundColor = when {
         isSelected -> Color(0xFFc6c6c2).copy(alpha = 0.3f)
         hasRecord -> when (status) {
-            DrinkingStatus.NORMAL -> Color(0xFFE8F5E8)
-            DrinkingStatus.WARNING -> Color(0xFFFFF4E5)
-            DrinkingStatus.DANGER -> Color(0xFFFDEBEC)
-            DrinkingStatus.DANGER -> Color(0xFFFFE0E0)
+            DrinkingStatus.APPROPRIATE -> Color(0xFFE8F5E8)
+            DrinkingStatus.CAUTION -> Color(0xFFFFF4E5)
+            DrinkingStatus.EXCESSIVE -> Color(0xFFFDEBEC)
+            DrinkingStatus.DANGEROUS -> Color(0xFFFFE0E0)
         }
         else -> Color.Transparent
     }
@@ -334,7 +333,7 @@ private fun MonthlyCalendarContent(
                                         day = dayNumber,
                                         isToday = isToday,
                                         isSelected = isSelected,
-                                        status = dailyStatusMap[date] ?: DrinkingStatus.NORMAL,
+                                        status = dailyStatusMap[date] ?: DrinkingStatus.APPROPRIATE,
                                         hasRecord = hasRecord,
                                         onClick = { viewModel.selectDate(date) }
                                     )
@@ -395,7 +394,7 @@ private fun MonthlyCalendarContent(
                 Spacer(modifier = Modifier.height(16.dp))
                 
                 val selectedDateRecords = records.filter { it.date == selectedDate }
-                val selectedDateStatus = dailyStatusMap[selectedDate] ?: DrinkingStatus.NORMAL
+                val selectedDateStatus = dailyStatusMap[selectedDate] ?: DrinkingStatus.APPROPRIATE
                 val totalAlcohol = selectedDateRecords.sumOf { it.getPureAlcoholGrams().toDouble() }.toFloat()
                 val totalStandardDrinks = selectedDateRecords.sumOf { it.getStandardDrinks().toDouble() }.toFloat()
                 
@@ -417,18 +416,18 @@ private fun MonthlyCalendarContent(
                         )
                         Text(
                             text = when(selectedDateStatus) {
-                                DrinkingStatus.NORMAL -> "적정"
-                                DrinkingStatus.WARNING -> "주의"
-                                DrinkingStatus.DANGER -> "과음"
-                                DrinkingStatus.DANGER -> "위험"
+                                DrinkingStatus.APPROPRIATE -> "적정"
+                                DrinkingStatus.CAUTION -> "주의"
+                                DrinkingStatus.EXCESSIVE -> "과음"
+                                DrinkingStatus.DANGEROUS -> "위험"
                             },
                             style = MaterialTheme.typography.bodySmall,
                             fontWeight = FontWeight.SemiBold,
                             color = when(selectedDateStatus) {
-                                DrinkingStatus.NORMAL -> androidx.compose.ui.graphics.Color.Green
-                                DrinkingStatus.WARNING -> androidx.compose.ui.graphics.Color(0xFFFF9800)
-                                DrinkingStatus.DANGER -> androidx.compose.ui.graphics.Color.Red
-                                DrinkingStatus.DANGER -> androidx.compose.ui.graphics.Color.Black
+                                DrinkingStatus.APPROPRIATE -> androidx.compose.ui.graphics.Color.Green
+                                DrinkingStatus.CAUTION -> androidx.compose.ui.graphics.Color(0xFFFF9800)
+                                DrinkingStatus.EXCESSIVE -> androidx.compose.ui.graphics.Color.Red
+                                DrinkingStatus.DANGEROUS -> androidx.compose.ui.graphics.Color.Black
                             }
                         )
                     }
@@ -561,7 +560,7 @@ private fun MonthlyCalendarContent(
         if (showDetailDialog) {
             val selectedDateRecords = records.filter { it.date == selectedDate }
             val dailyStatusMap by viewModel.dailyStatusMap.collectAsStateWithLifecycle()
-            val selectedDateStatus = dailyStatusMap[selectedDate] ?: DrinkingStatus.NORMAL
+            val selectedDateStatus = dailyStatusMap[selectedDate] ?: DrinkingStatus.APPROPRIATE
             val totalAlcohol = selectedDateRecords.sumOf { it.getPureAlcoholGrams().toDouble() }.toFloat()
             val totalStandardDrinks = selectedDateRecords.sumOf { it.getStandardDrinks().toDouble() }.toFloat()
             
@@ -605,20 +604,20 @@ private fun StatisticsContent(
         // 주간 기준
         val weeklyAlcohol = weeklyStats.totalStandardDrinks * 8f // 표준잔 -> 알코올(g)
         when {
-            weeklyAlcohol <= if (isMale) 196f else 98f -> DrinkingStatus.NORMAL // 28g * 7일
-            weeklyAlcohol <= if (isMale) 392f else 294f -> DrinkingStatus.WARNING // 56g * 7일
-            weeklyAlcohol <= if (isMale) 490f else 392f -> DrinkingStatus.DANGER // 70g * 7일
-            else -> DrinkingStatus.DANGER
+            weeklyAlcohol <= if (isMale) 196f else 98f -> DrinkingStatus.APPROPRIATE // 28g * 7일
+            weeklyAlcohol <= if (isMale) 392f else 294f -> DrinkingStatus.CAUTION // 56g * 7일
+            weeklyAlcohol <= if (isMale) 490f else 392f -> DrinkingStatus.EXCESSIVE // 70g * 7일
+            else -> DrinkingStatus.DANGEROUS
         }
     } else {
         // 월간 기준
         val monthlyAlcohol = monthlyStats.totalStandardDrinks * 8f
         val daysInMonth = java.time.LocalDate.now().lengthOfMonth()
         when {
-            monthlyAlcohol <= if (isMale) (28f * daysInMonth) else (14f * daysInMonth) -> DrinkingStatus.NORMAL
-            monthlyAlcohol <= if (isMale) (56f * daysInMonth) else (42f * daysInMonth) -> DrinkingStatus.WARNING
-            monthlyAlcohol <= if (isMale) (70f * daysInMonth) else (56f * daysInMonth) -> DrinkingStatus.DANGER
-            else -> DrinkingStatus.DANGER
+            monthlyAlcohol <= if (isMale) (28f * daysInMonth) else (14f * daysInMonth) -> DrinkingStatus.APPROPRIATE
+            monthlyAlcohol <= if (isMale) (56f * daysInMonth) else (42f * daysInMonth) -> DrinkingStatus.CAUTION
+            monthlyAlcohol <= if (isMale) (70f * daysInMonth) else (56f * daysInMonth) -> DrinkingStatus.EXCESSIVE
+            else -> DrinkingStatus.DANGEROUS
         }
     }
     
@@ -734,28 +733,28 @@ private fun StatisticsContent(
                     Card(
                         colors = CardDefaults.cardColors(
                             containerColor = when(currentHealthStatus) {
-                                DrinkingStatus.NORMAL -> Color(0xFFE8F5E8)
-                                DrinkingStatus.WARNING -> Color(0xFFFFF4E5)
-                                DrinkingStatus.DANGER -> Color(0xFFFDEBEC)
-                                DrinkingStatus.DANGER -> Color(0xFFFFE0E0)
+                                DrinkingStatus.APPROPRIATE -> Color(0xFFE8F5E8)
+                                DrinkingStatus.CAUTION -> Color(0xFFFFF4E5)
+                                DrinkingStatus.EXCESSIVE -> Color(0xFFFDEBEC)
+                                DrinkingStatus.DANGEROUS -> Color(0xFFFFE0E0)
                             }
                         ),
                         shape = RoundedCornerShape(16.dp)
                     ) {
                         Text(
                             text = when(currentHealthStatus) {
-                                DrinkingStatus.NORMAL -> "양호"
-                                DrinkingStatus.WARNING -> "주의"
-                                DrinkingStatus.DANGER -> "과음"
-                                DrinkingStatus.DANGER -> "위험"
+                                DrinkingStatus.APPROPRIATE -> "양호"
+                                DrinkingStatus.CAUTION -> "주의"
+                                DrinkingStatus.EXCESSIVE -> "과음"
+                                DrinkingStatus.DANGEROUS -> "위험"
                             },
                             style = MaterialTheme.typography.bodySmall,
                             fontWeight = FontWeight.SemiBold,
                             color = when(currentHealthStatus) {
-                                DrinkingStatus.NORMAL -> Color(0xFF2E7D32)
-                                DrinkingStatus.WARNING -> Color(0xFFE65100)
-                                DrinkingStatus.DANGER -> Color(0xFFC62828)
-                                DrinkingStatus.DANGER -> Color.Black
+                                DrinkingStatus.APPROPRIATE -> Color(0xFF2E7D32)
+                                DrinkingStatus.CAUTION -> Color(0xFFE65100)
+                                DrinkingStatus.EXCESSIVE -> Color(0xFFC62828)
+                                DrinkingStatus.DANGEROUS -> Color.Black
                             },
                             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                         )
@@ -776,10 +775,10 @@ private fun StatisticsContent(
                     progress = progressValue,
                     modifier = Modifier.fillMaxWidth(),
                     color = when(currentHealthStatus) {
-                        DrinkingStatus.NORMAL -> Color(0xFF4CAF50)
-                        DrinkingStatus.WARNING -> Color(0xFFFF9800)
-                        DrinkingStatus.DANGER -> Color(0xFFF44336)
-                        DrinkingStatus.DANGER -> Color.Black
+                        DrinkingStatus.APPROPRIATE -> Color(0xFF4CAF50)
+                        DrinkingStatus.CAUTION -> Color(0xFFFF9800)
+                        DrinkingStatus.EXCESSIVE -> Color(0xFFF44336)
+                        DrinkingStatus.DANGEROUS -> Color.Black
                     },
                     trackColor = AppBackground
                 )

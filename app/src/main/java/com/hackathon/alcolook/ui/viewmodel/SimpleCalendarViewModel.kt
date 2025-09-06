@@ -90,8 +90,8 @@ class SimpleCalendarViewModel : ViewModel() {
     
     // 건강 상태 (오늘 기준)
     val healthStatus = dailyStatusMap.map { statusMap ->
-        statusMap[LocalDate.now()] ?: DrinkingStatus.APPROPRIATE
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(), DrinkingStatus.APPROPRIATE)
+        statusMap[LocalDate.now()] ?: DrinkingStatus.NORMAL
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(), DrinkingStatus.NORMAL)
     
     // 주간 차트 데이터 (최근 7일)
     val weeklyChartData = records.map { recordList ->
@@ -259,49 +259,49 @@ class SimpleCalendarViewModel : ViewModel() {
     // 일일 알코올 섭취량 평가
     private fun evaluateDailyStatus(dailyAlcoholGrams: Float, isMale: Boolean): DrinkingStatus {
         return when {
-            dailyAlcoholGrams <= if (isMale) 28f else 14f -> DrinkingStatus.APPROPRIATE
-            dailyAlcoholGrams <= if (isMale) 56f else 42f -> DrinkingStatus.CAUTION  
-            dailyAlcoholGrams <= if (isMale) 70f else 56f -> DrinkingStatus.EXCESSIVE
-            else -> DrinkingStatus.EXCESSIVE // 일일 기준으로는 최대 EXCESSIVE
+            dailyAlcoholGrams <= if (isMale) 28f else 14f -> DrinkingStatus.NORMAL
+            dailyAlcoholGrams <= if (isMale) 56f else 42f -> DrinkingStatus.WARNING  
+            dailyAlcoholGrams <= if (isMale) 70f else 56f -> DrinkingStatus.DANGER
+            else -> DrinkingStatus.DANGER // 일일 기준으로는 최대 DANGER
         }
     }
     
     // 월간 과음 횟수 기준 평가
     private fun evaluateMonthlyStatus(monthlyExcessiveDays: Int): DrinkingStatus {
-        return if (monthlyExcessiveDays >= 5) DrinkingStatus.DANGEROUS else DrinkingStatus.APPROPRIATE
+        return if (monthlyExcessiveDays >= 5) DrinkingStatus.DANGER else DrinkingStatus.NORMAL
     }
     
     // 전체 건강 상태 평가 (가장 높은 위험도 반환)
     private fun evaluateOverallHealthStatus(dailyStatus: DrinkingStatus, monthlyStatus: DrinkingStatus): DrinkingStatus {
         return when {
-            dailyStatus == DrinkingStatus.DANGEROUS || monthlyStatus == DrinkingStatus.DANGEROUS -> DrinkingStatus.DANGEROUS
-            dailyStatus == DrinkingStatus.EXCESSIVE -> DrinkingStatus.EXCESSIVE
-            dailyStatus == DrinkingStatus.CAUTION -> DrinkingStatus.CAUTION
-            else -> DrinkingStatus.APPROPRIATE
+            dailyStatus == DrinkingStatus.DANGER || monthlyStatus == DrinkingStatus.DANGER -> DrinkingStatus.DANGER
+            dailyStatus == DrinkingStatus.DANGER -> DrinkingStatus.DANGER
+            dailyStatus == DrinkingStatus.WARNING -> DrinkingStatus.WARNING
+            else -> DrinkingStatus.NORMAL
         }
     }
     
     fun getCharacterComment(status: DrinkingStatus): String {
         val comments = when (status) {
-            DrinkingStatus.APPROPRIATE -> listOf(
+            DrinkingStatus.NORMAL -> listOf(
                 "오늘은 딱 알맞게 즐기셨네요! 균형 잡힌 음주, 멋져요!",
                 "좋습니다 내일도 상쾌하게 일어날 수 있겠네요.",
                 "이 정도면 건강에 큰 무리 없어요. 현명한 선택이네요!",
                 "오늘은 깔끔하게 딱 적정량만! 자기 관리 잘하시네요"
             )
-            DrinkingStatus.CAUTION -> listOf(
+            DrinkingStatus.WARNING -> listOf(
                 "조금은 과했네요 내일은 물 많이 드시고 쉬어주세요.",
                 "이 정도면 괜찮지만, 매일 반복되면 몸이 힘들 수 있어요.",
                 "슬슬 간이 피곤해질지도… 내일은 가볍게 보내는 게 어떨까요?",
                 "컨디션 체크하면서 마시는 것도 중요해요"
             )
-            DrinkingStatus.EXCESSIVE -> listOf(
+            DrinkingStatus.DANGER -> listOf(
                 "이건 위험한 수준이에요 속도를 줄이셔야 합니다.",
                 "오늘은 좀 과격했네요… 간이 놀랐을 거예요",
                 "이러다 내일 숙취와 함께 고통받을 수도 있어요",
                 "가끔은 괜찮지만, 자주 반복되면 건강에 큰 부담이 돼요."
             )
-            DrinkingStatus.DANGEROUS -> listOf(
+            DrinkingStatus.DANGER -> listOf(
                 "심각한 음주 패턴이 보입니다 전문가 상담을 고려하세요.",
                 "몸이 보내는 신호를 무시하지 마세요. 위험해요.",
                 "이 정도면 간이 SOS를 보내고 있을 거예요",
@@ -338,10 +338,10 @@ class SimpleCalendarViewModel : ViewModel() {
             
             val status = evaluateDailyStatus(totalAlcohol, isMale)
             val color = when (status) {
-                DrinkingStatus.APPROPRIATE -> androidx.compose.ui.graphics.Color.Green
-                DrinkingStatus.CAUTION -> androidx.compose.ui.graphics.Color(0xFFFF9800)
-                DrinkingStatus.EXCESSIVE -> androidx.compose.ui.graphics.Color.Red
-                DrinkingStatus.DANGEROUS -> androidx.compose.ui.graphics.Color.Black
+                DrinkingStatus.NORMAL -> androidx.compose.ui.graphics.Color.Green
+                DrinkingStatus.WARNING -> androidx.compose.ui.graphics.Color(0xFFFF9800)
+                DrinkingStatus.DANGER -> androidx.compose.ui.graphics.Color.Red
+                DrinkingStatus.DANGER -> androidx.compose.ui.graphics.Color.Black
             }
             
             chartData.add(
@@ -391,17 +391,17 @@ class SimpleCalendarViewModel : ViewModel() {
             val totalAlcohol = weekRecords.sumOf { it.getPureAlcoholGrams().toDouble() }.toFloat()
             
             val status = when {
-                totalAlcohol <= if (isMale) 196f else 98f -> DrinkingStatus.APPROPRIATE // 28g * 7일
-                totalAlcohol <= if (isMale) 392f else 294f -> DrinkingStatus.CAUTION
-                totalAlcohol <= if (isMale) 490f else 392f -> DrinkingStatus.EXCESSIVE
-                else -> DrinkingStatus.DANGEROUS
+                totalAlcohol <= if (isMale) 196f else 98f -> DrinkingStatus.NORMAL // 28g * 7일
+                totalAlcohol <= if (isMale) 392f else 294f -> DrinkingStatus.WARNING
+                totalAlcohol <= if (isMale) 490f else 392f -> DrinkingStatus.DANGER
+                else -> DrinkingStatus.DANGER
             }
             
             val color = when (status) {
-                DrinkingStatus.APPROPRIATE -> androidx.compose.ui.graphics.Color.Green
-                DrinkingStatus.CAUTION -> androidx.compose.ui.graphics.Color(0xFFFF9800)
-                DrinkingStatus.EXCESSIVE -> androidx.compose.ui.graphics.Color.Red
-                DrinkingStatus.DANGEROUS -> androidx.compose.ui.graphics.Color.Black
+                DrinkingStatus.NORMAL -> androidx.compose.ui.graphics.Color.Green
+                DrinkingStatus.WARNING -> androidx.compose.ui.graphics.Color(0xFFFF9800)
+                DrinkingStatus.DANGER -> androidx.compose.ui.graphics.Color.Red
+                DrinkingStatus.DANGER -> androidx.compose.ui.graphics.Color.Black
             }
             
             chartData.add(

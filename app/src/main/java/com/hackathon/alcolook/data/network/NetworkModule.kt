@@ -1,5 +1,6 @@
 package com.hackathon.alcolook.data.network
 
+import com.hackathon.alcolook.data.remote.DrinkRecordApiService
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -33,5 +34,11 @@ object NetworkModule {
     @Singleton
     fun provideUserProfileApiService(retrofit: Retrofit): UserProfileApiService {
         return retrofit.create(UserProfileApiService::class.java)
+    }
+    
+    @Provides
+    @Singleton
+    fun provideDrinkRecordApiService(retrofit: Retrofit): DrinkRecordApiService {
+        return retrofit.create(DrinkRecordApiService::class.java)
     }
 }

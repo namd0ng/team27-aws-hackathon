@@ -54,10 +54,10 @@ fun RecordDetailDialog(
                     Card(
                         colors = CardDefaults.cardColors(
                             containerColor = when(dailyStatus) {
-                                DrinkingStatus.APPROPRIATE -> androidx.compose.ui.graphics.Color.Green.copy(alpha = 0.1f)
-                                DrinkingStatus.CAUTION -> androidx.compose.ui.graphics.Color.Yellow.copy(alpha = 0.1f)
-                                DrinkingStatus.EXCESSIVE -> androidx.compose.ui.graphics.Color.Red.copy(alpha = 0.1f)
-                                DrinkingStatus.DANGEROUS -> androidx.compose.ui.graphics.Color.Black.copy(alpha = 0.1f)
+                                DrinkingStatus.NORMAL -> androidx.compose.ui.graphics.Color.Green.copy(alpha = 0.1f)
+                                DrinkingStatus.WARNING -> androidx.compose.ui.graphics.Color.Yellow.copy(alpha = 0.1f)
+                                DrinkingStatus.DANGER -> androidx.compose.ui.graphics.Color.Red.copy(alpha = 0.1f)
+                                DrinkingStatus.DANGER -> androidx.compose.ui.graphics.Color.Black.copy(alpha = 0.1f)
                             }
                         )
                     ) {
@@ -79,17 +79,17 @@ fun RecordDetailDialog(
                             }
                             Text(
                                 text = "상태: ${when(dailyStatus) {
-                                    DrinkingStatus.APPROPRIATE -> "적정"
-                                    DrinkingStatus.CAUTION -> "주의"
-                                    DrinkingStatus.EXCESSIVE -> "과음"
-                                    DrinkingStatus.DANGEROUS -> "위험"
+                                    DrinkingStatus.NORMAL -> "적정"
+                                    DrinkingStatus.WARNING -> "주의"
+                                    DrinkingStatus.DANGER -> "과음"
+                                    DrinkingStatus.DANGER -> "위험"
                                 }}",
                                 fontWeight = FontWeight.SemiBold,
                                 color = when(dailyStatus) {
-                                    DrinkingStatus.APPROPRIATE -> androidx.compose.ui.graphics.Color.Green
-                                    DrinkingStatus.CAUTION -> androidx.compose.ui.graphics.Color(0xFFFF9800)
-                                    DrinkingStatus.EXCESSIVE -> androidx.compose.ui.graphics.Color.Red
-                                    DrinkingStatus.DANGEROUS -> androidx.compose.ui.graphics.Color.Black
+                                    DrinkingStatus.NORMAL -> androidx.compose.ui.graphics.Color.Green
+                                    DrinkingStatus.WARNING -> androidx.compose.ui.graphics.Color(0xFFFF9800)
+                                    DrinkingStatus.DANGER -> androidx.compose.ui.graphics.Color.Red
+                                    DrinkingStatus.DANGER -> androidx.compose.ui.graphics.Color.Black
                                 }
                             )
                         }
