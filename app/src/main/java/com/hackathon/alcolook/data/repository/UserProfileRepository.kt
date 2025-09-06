@@ -7,6 +7,7 @@ import androidx.datastore.preferences.preferencesDataStore
 import com.hackathon.alcolook.data.model.Gender
 import com.hackathon.alcolook.data.model.UserProfile
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -61,6 +62,32 @@ class UserProfileRepository @Inject constructor(
     suspend fun clearAllData() {
         context.dataStore.edit { preferences ->
             preferences.clear()
+        }
+    }
+    
+    suspend fun getUserProfile(): UserProfile {
+        return context.dataStore.data.map { preferences ->
+            UserProfile(
+                sex = try {
+                    Gender.valueOf(preferences[PreferencesKeys.GENDER] ?: Gender.UNSET.name)
+                } catch (e: IllegalArgumentException) {
+                    Gender.UNSET
+                },
+                isSenior65 = preferences[PreferencesKeys.IS_SENIOR_65] ?: false,
+                weeklyGoalStdDrinks = preferences[PreferencesKeys.WEEKLY_GOAL_STD_DRINKS]
+            )
+        }.first()
+    }
+    
+    suspend fun saveUserProfile(userProfile: UserProfile) {
+        context.dataStore.edit { preferences ->
+            preferences[PreferencesKeys.GENDER] = userProfile.sex.name
+            preferences[PreferencesKeys.IS_SENIOR_65] = userProfile.isSenior65
+            if (userProfile.weeklyGoalStdDrinks != null) {
+                preferences[PreferencesKeys.WEEKLY_GOAL_STD_DRINKS] = userProfile.weeklyGoalStdDrinks
+            } else {
+                preferences.remove(PreferencesKeys.WEEKLY_GOAL_STD_DRINKS)
+            }
         }
     }
 }

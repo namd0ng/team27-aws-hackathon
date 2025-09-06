@@ -23,7 +23,7 @@ val BottomNavBackground = Color(0xFFFFFFFF) // Bottom nav background
 val BottomNavSelected = Color(0xFF007AFF) // Selected bottom nav
 val BottomNavUnselected = Color(0xFF8E8E93) // Unselected bottom nav
 
-// Status Colors
+
 val StatusNormal = Color(0xFF34C759) // Green for normal
 val StatusWarning = Color(0xFFFF9500) // Orange for warning  
 val StatusDanger = Color(0xFFFF3B30) // Red for danger

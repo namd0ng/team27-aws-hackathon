@@ -10,6 +10,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
@@ -34,6 +35,7 @@ fun AddRecordDialog(
     var quantity by remember { mutableStateOf("1") }
     var customAbv by remember { mutableStateOf("") }
     var customDrinkName by remember { mutableStateOf("") }
+    var customVolume by remember { mutableStateOf("") }
     var note by remember { mutableStateOf("") }
     
     // 기본 도수 표시
@@ -41,7 +43,11 @@ fun AddRecordDialog(
     val displayAbv = if (customAbv.isBlank()) defaultAbv.toString() else customAbv
     
     // 용량 계산
-    val volumePerUnit = selectedUnit.getVolumeMl(selectedType)
+    val volumePerUnit = if (selectedUnit == DrinkUnit.OTHER) {
+        customVolume.toIntOrNull() ?: 0
+    } else {
+        selectedUnit.getVolumeMl(selectedType)
+    }
     val totalVolume = (quantity.toIntOrNull() ?: 1) * volumePerUnit
 
     Dialog(onDismissRequest = onDismiss) {
@@ -51,6 +57,10 @@ fun AddRecordDialog(
                 .fillMaxHeight(0.9f)
                 .padding(16.dp),
             shape = RoundedCornerShape(16.dp)
+,
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surface
+            )
         ) {
             LazyColumn(
                 modifier = Modifier.padding(24.dp),
@@ -120,7 +130,11 @@ fun AddRecordDialog(
                                 onClick = { selectedUnit = unit },
                                 label = { 
                                     Text(
-                                        text = "${unit.getDisplayName()} (${unit.getVolumeMl(selectedType)}ml)",
+                                        text = if (unit == DrinkUnit.OTHER) {
+                                            "${unit.getDisplayName()} (직접 입력)"
+                                        } else {
+                                            "${unit.getDisplayName()} (${unit.getVolumeMl(selectedType)}ml)"
+                                        },
                                         style = MaterialTheme.typography.bodySmall
                                     )
                                 },
@@ -130,6 +144,21 @@ fun AddRecordDialog(
                     }
                 }
 
+
+                // 기타 용량 입력 (기타 선택 시만)
+                if (selectedUnit == DrinkUnit.OTHER) {
+                    item {
+                        OutlinedTextField(
+                            value = customVolume,
+                            onValueChange = { customVolume = it },
+                            label = { Text("용량 (ml)") },
+                            placeholder = { Text("예: 300") },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true
+                        )
+                    }
+                }
                 // 수량 입력
                 item {
                     Text(
@@ -264,7 +293,7 @@ fun AddRecordDialog(
                                     pureAlcohol <= if (isMale) 28f else 14f -> DrinkingStatus.APPROPRIATE
                                     pureAlcohol <= if (isMale) 56f else 42f -> DrinkingStatus.CAUTION
                                     pureAlcohol <= if (isMale) 70f else 56f -> DrinkingStatus.EXCESSIVE
-                                    else -> DrinkingStatus.EXCESSIVE
+                                    else -> DrinkingStatus.DANGEROUS
                                 }
                                 
                                 // 랜덤 메시지 선택
@@ -314,10 +343,10 @@ fun AddRecordDialog(
                     shape = RoundedCornerShape(16.dp),
                     colors = CardDefaults.cardColors(
                         containerColor = when(resultStatus) {
-                            DrinkingStatus.APPROPRIATE -> androidx.compose.ui.graphics.Color.Green.copy(alpha = 0.7f)
-                            DrinkingStatus.CAUTION -> androidx.compose.ui.graphics.Color.Yellow.copy(alpha = 0.7f)
-                            DrinkingStatus.EXCESSIVE -> androidx.compose.ui.graphics.Color.Red.copy(alpha = 0.7f)
-                            DrinkingStatus.DANGEROUS -> androidx.compose.ui.graphics.Color.Black.copy(alpha = 0.7f)
+                            DrinkingStatus.APPROPRIATE -> Color(0xFFE8F5E8)
+                            DrinkingStatus.CAUTION -> Color(0xFFFFF4E5)
+                            DrinkingStatus.EXCESSIVE -> Color(0xFFFDEBEC)
+                            DrinkingStatus.DANGEROUS -> Color(0xFFFFE0E0)
                         }
                     )
                 ) {
@@ -342,9 +371,9 @@ fun AddRecordDialog(
                             style = MaterialTheme.typography.headlineSmall,
                             fontWeight = FontWeight.Bold,
                             color = when(resultStatus) {
-                                DrinkingStatus.APPROPRIATE -> androidx.compose.ui.graphics.Color.Green
-                                DrinkingStatus.CAUTION -> androidx.compose.ui.graphics.Color(0xFFFF9800)
-                                DrinkingStatus.EXCESSIVE -> androidx.compose.ui.graphics.Color.Red
+                                DrinkingStatus.APPROPRIATE -> Color.Black
+                                DrinkingStatus.CAUTION -> Color.Black
+                                DrinkingStatus.EXCESSIVE -> Color.Black
                                 DrinkingStatus.DANGEROUS -> androidx.compose.ui.graphics.Color.Black
                             }
                         )

@@ -82,7 +82,9 @@ dependencies {
     implementation("androidx.health.connect:connect-client:1.1.0-alpha07")
 
     implementation(libs.androidx.navigation.compose)
-    
+    implementation("androidx.compose.material:material-icons-extended:1.5.4")
+    implementation(libs.androidx.navigation.compose)
+
     // Room
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
@@ -96,6 +98,11 @@ dependencies {
     // DataStore
     implementation(libs.androidx.datastore.preferences)
     
+    // Network
+    implementation("com.squareup.retrofit2:retrofit:2.9.0")
+    implementation("com.squareup.retrofit2:converter-gson:2.9.0")
+    implementation("com.squareup.okhttp3:logging-interceptor:4.11.0")
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

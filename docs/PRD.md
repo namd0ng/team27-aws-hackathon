@@ -2,10 +2,10 @@
 
 ## 제품 개요
 
-**AlcoLook**은 온디바이스 로컬 처리를 원칙으로 하는 음주 기록 및 얼굴 기반 재미형 음주 인식 Android 앱입니다. 사용자가 자신의 음주 습관을 가볍게 점검하고 기록할 수 있도록 돕는 참고용 도구입니다.
+**AlcoLook**은 Amazon Rekognition과 DynamoDB를 활용한 음주 기록 및 얼굴 기반 재미형 음주 인식 Android 앱입니다. 사용자가 자신의 음주 습관을 가볍게 점검하고 기록할 수 있도록 돕는 참고용 도구입니다.
 
 ### 핵심 가치 제안
-- **완전한 프라이버시**: 모든 데이터 처리 및 저장이 디바이스 내에서만 이루어짐
+- **고도화된 분석**: Amazon Rekognition을 활용한 정확한 얼굴 분석
 - **간편한 기록**: 캘린더 기반의 직관적인 음주 기록 관리
 - **재미있는 분석**: 얼굴 사진을 통한 음주 확률 추정 (참고용)
 - **건강한 습관**: 표준잔수 기반 목표 설정 및 트렌드 분석
@@ -25,8 +25,8 @@
 | **삼성 헬스** | 로컬 데이터 저장, 프라이버시 | 완전 오프라인, 네트워크 연결 불필요 |
 
 ### 차별화 전략
-1. **완전한 오프라인 동작**: 네트워크 연결 없이 모든 기능 사용 가능
-2. **얼굴 기반 재미 요소**: ML Kit을 활용한 음주 확률 추정
+1. **AWS 서비스 활용**: Amazon Rekognition과 DynamoDB를 통한 고도화된 분석
+2. **얼굴 기반 재미 요소**: Amazon Rekognition을 활용한 음주 확률 추정
 3. **표준잔수 기반 과학적 접근**: WHO 기준 표준잔수 계산 및 건강 지수 제공
 
 ---
@@ -64,7 +64,7 @@ AlcoLook
 | 기능 | 명세 | 기술 구현 |
 |------|------|-----------|
 | **카메라 촬영** | 전면 카메라로 단일 얼굴 사진 촬영 | CameraX v1.4.x |
-| **얼굴 검출** | ML Kit으로 얼굴 특징점 추출 | ML Kit Face Detection |
+| **얼굴 검출** | Amazon Rekognition으로 얼굴 특징점 추출 | Amazon Rekognition |
 | **음주 확률 계산** | IntoxicationPredictor 인터페이스 | 더미/룰 기반 구현 |
 | **결과 표시** | 확률%, 캐릭터 코멘트, 면책 고지 | Jetpack Compose |
 | **액션 버튼** | [공유] [결과 기록] [다시] 순서 | Material 3 Button |
@@ -80,7 +80,7 @@ AlcoLook
 |------|------|---------|
 | **월 그리드** | 7x6 캘린더 그리드 표시 | LazyVerticalGrid |
 | **날짜 상태** | 양호(기본)/주의(연주황)/폭음(연적색) | 배경색 또는 도트 |
-| **기록 CRUD** | 생성/조회/수정/삭제 + Undo | Room + ViewModel |
+| **기록 CRUD** | 생성/조회/수정/삭제 + Undo | DynamoDB + ViewModel |
 | **요약 바텀시트** | 선택일 총 섭취량, 표준잔수, 상태 | ModalBottomSheet |
 
 **상태 분류 규칙:**
@@ -110,7 +110,7 @@ AlcoLook
 
 ### 3. 데이터 모델
 
-#### 3.1 Room 엔티티
+#### 3.1 DynamoDB 엔티티
 
 ```kotlin
 // DrinkType enum
@@ -119,9 +119,7 @@ enum class DrinkType {
 }
 
 // DrinkRecord entity
-@Entity(tableName = "drink_records")
 data class DrinkRecord(
-    @PrimaryKey(autoGenerate = true)
     val id: Long = 0,
     val date: LocalDate,
     val type: DrinkType,
@@ -133,9 +131,8 @@ data class DrinkRecord(
 )
 
 // UserProfile entity
-@Entity(tableName = "user_profile")
 data class UserProfile(
-    @PrimaryKey val id: Int = 1,
+    val id: Int = 1,
     val sex: Sex = Sex.UNSET,
     val isSenior65: Boolean = false,
     val weeklyGoalStdDrinks: Int? = null
@@ -215,8 +212,8 @@ std_drinks = EtOH / 14
 | **언어** | Kotlin | Latest | Android 공식 권장 언어 |
 | **UI** | Jetpack Compose | Latest | Material 3 지원, 선언적 UI |
 | **카메라** | CameraX | v1.4.x | 안정적인 카메라 API |
-| **ML** | ML Kit Face Detection | Latest | 온디바이스 얼굴 검출 |
-| **DB** | Room | Latest | 로컬 데이터베이스 표준 |
+| **얼굴분석** | Amazon Rekognition | Latest | 클라우드 기반 얼굴 분석 |
+| **DB** | DynamoDB | Latest | 클라우드 데이터베이스 |
 | **DI** | Hilt | Latest | 의존성 주입 표준 |
 | **아키텍처** | MVVM + Repository | - | Android 권장 패턴 |
 
@@ -231,7 +228,7 @@ app/
 │   │   ├── settings/      # 설정 화면
 │   │   └── theme/         # 테마, 색상 토큰
 │   ├── data/
-│   │   ├── local/         # Room 엔티티, DAO
+│   │   ├── cloud/         # DynamoDB 엔티티, API
 │   │   ├── repository/    # 리포지토리 구현
 │   │   └── model/         # 데이터 모델
 │   ├── domain/
@@ -271,7 +268,7 @@ app/
 - [ ] 설정 화면 완성
 
 ### M2: 캘린더 기능
-- [ ] Room 데이터베이스 구축
+- [ ] DynamoDB 데이터베이스 구축
 - [ ] 기록 CRUD + Undo 기능
 - [ ] 월별 캘린더 그리드 + 상태 표시
 - [ ] 선택일 요약 바텀시트
@@ -286,7 +283,7 @@ app/
 
 ### M4: 얼굴 분석
 - [ ] CameraX 촬영 구현
-- [ ] ML Kit 얼굴 검출
+- [ ] Amazon Rekognition 얼굴 분석
 - [ ] IntoxicationPredictor 인터페이스
 - [ ] 더미 분석 로직
 - [ ] 결과 화면 + [결과 기록] 연동
@@ -302,8 +299,8 @@ app/
 ## 규정 준수 및 보안
 
 ### 프라이버시 원칙
-1. **완전한 로컬 처리**: 모든 데이터가 디바이스를 벗어나지 않음
-2. **최소 권한**: 카메라 권한만 요청 (INTERNET 권한 금지)
+1. **투명한 데이터 처리**: Amazon Rekognition과 DynamoDB 사용 명시
+2. **필요 권한**: 카메라 및 인터넷 권한 요청
 3. **사용자 제어**: 언제든 전체 데이터 삭제 가능
 4. **투명성**: 데이터 처리 방식 명시
 
@@ -326,9 +323,9 @@ app/
 AlcoLook은 완전한 프라이버시 보호 하에 사용자의 음주 습관을 재미있고 과학적으로 관리할 수 있는 혁신적인 앱입니다. 얼굴 기반 분석이라는 독특한 재미 요소와 표준잔수 기반의 건강 관리를 결합하여, 20-30대 사용자들에게 새로운 가치를 제공할 것입니다.
 
 **핵심 성공 요인:**
-1. **완벽한 오프라인 동작**으로 프라이버시 우려 해소
+1. **AWS 서비스 활용**으로 고도화된 분석 제공
 2. **직관적인 캘린더 UI**로 지속적인 사용 유도  
 3. **과학적 표준잔수 계산**으로 신뢰성 확보
-4. **재미있는 얼굴 분석**으로 차별화된 경험 제공
+4. **Amazon Rekognition 기반 얼굴 분석**으로 차별화된 경험 제공
 
 이 PRD를 바탕으로 단계적 개발을 진행하여 사용자에게 가치 있는 음주 관리 도구를 제공하겠습니다.

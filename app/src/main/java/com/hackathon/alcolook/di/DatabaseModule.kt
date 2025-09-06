@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.room.Room
 import com.hackathon.alcolook.data.dao.DrinkRecordDao
 import com.hackathon.alcolook.data.database.AlcoLookDatabase
+import com.hackathon.alcolook.data.repository.UserProfileRepository
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -30,5 +31,13 @@ object DatabaseModule {
     @Provides
     fun provideDrinkRecordDao(database: AlcoLookDatabase): DrinkRecordDao {
         return database.drinkRecordDao()
+    }
+    
+    @Provides
+    @Singleton
+    fun provideUserProfileRepository(
+        @ApplicationContext context: Context
+    ): UserProfileRepository {
+        return UserProfileRepository(context)
     }
 }
