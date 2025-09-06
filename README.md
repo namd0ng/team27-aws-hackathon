@@ -1,120 +1,213 @@
-# AlcoLook - 음주 측정 및 관리 앱
+# AlcoLook : 스마트 음주 관리 솔루션
 
-AWS 해커톤 Team27 프로젝트
+AlcoLook은 얼굴 분석 기술과 클라우드 기반 데이터 관리를 통해 개인의 음주 패턴을 체계적으로 관리하고 건강한 음주 습관을 형성할 수 있도록 도와주는 혁신적인 모바일 애플리케이션입니다.
 
-## 📱 프로젝트 개요
+## 어플리케이션 개요
 
-AlcoLook은 얼굴 분석을 통한 음주 측정 및 관리 앱입니다.
+AlcoLook은 최신 AI 기술과 AWS 클라우드 인프라를 결합하여 사용자의 음주 상태를 실시간으로 분석하고, 개인 맞춤형 음주 관리 서비스를 제공합니다. 단순한 기록 앱을 넘어서 사용자의 건강과 안전을 최우선으로 하는 스마트 헬스케어 솔루션입니다.
 
-### 주요 기능
-- 📸 **얼굴 분석**: 카메라를 통한 음주 상태 측정
-- 📊 **음주 기록**: 일별/주별/월별 음주 패턴 분석
-- 📅 **캘린더**: 음주 기록 시각화 및 관리
-- 👤 **프로필**: 개인 설정 및 목표 관리
+이 앱은 얼굴 분석을 통한 음주 상태 측정, 개인별 음주 패턴 분석, 건강 지표 모니터링 등의 기능을 통해 사용자가 자신의 음주 습관을 객관적으로 파악하고 개선할 수 있도록 지원합니다. 모든 데이터는 AWS DynamoDB에 안전하게 저장되며, JWT 토큰 기반 인증으로 개인정보를 보호합니다.
 
-## 🏗️ 기술 스택
+## 주요 기능
+
+### 📸 얼굴 분석 기반 음주 측정
+- **CameraX 기술**: 고품질 카메라 인터페이스로 정확한 얼굴 촬영
+- **ML Kit 얼굴 검출**: Google ML Kit을 활용한 실시간 얼굴 특징 분석
+- **AI 음주 상태 예측**: 얼굴 특징을 기반으로 한 음주 확률 측정
+- **즉시 결과 제공**: 촬영 후 500ms 이내 분석 결과 표시
+
+### 📊 개인 맞춤형 음주 기록 관리
+- **상세 음주 기록**: 주종별, 도수별, 양별 세분화된 기록 관리
+- **표준잔수 계산**: 국제 기준에 따른 정확한 알코올 섭취량 계산
+- **건강 상태 분류**: 양호/주의/폭음 단계별 상태 표시
+- **실시간 동기화**: AWS DynamoDB 기반 클라우드 데이터 저장
+
+### 📅 시각적 캘린더 및 통계
+- **월별 캘린더**: 일별 음주 상태를 색상으로 직관적 표시
+- **통계 대시보드**: 주간/월간 음주 패턴 분석 및 트렌드 제공
+- **건강 지수**: 개인 프로필 기반 맞춤형 건강 지표 계산
+- **차트 시각화**: Jetpack Compose 기반 네이티브 차트 구현
+
+### 👤 개인 프로필 및 목표 설정
+- **개인 정보 관리**: 성별, 나이, 건강 상태 기반 개인화
+- **주간 목표 설정**: 개인별 음주 목표량 설정 및 달성률 추적
+- **데이터 보안**: JWT 토큰 기반 인증 및 암호화된 데이터 저장
+
+## 기술 스택
 
 ### Frontend (Android)
-- **Kotlin** + **Jetpack Compose** (Material 3)
-- **Navigation Compose** (3-tab navigation)
+- **Kotlin** + **Jetpack Compose** (Material 3 Design)
 - **CameraX** (카메라 기능)
-- **ML Kit** (얼굴 검출)
+- **ML Kit** (얼굴 검출 및 분석)
+- **Room Database** (로컬 데이터 캐싱)
 - **OkHttp** (네트워크 통신)
+- **Hilt** (의존성 주입)
 
-### Backend (AWS)
-- **AWS Lambda** (Python + Node.js)
-- **Amazon DynamoDB** (데이터 저장)
-- **API Gateway** (REST API)
-- **JWT** 인증
+### Backend (AWS Cloud)
+- **AWS Lambda** (서버리스 컴퓨팅)
+- **Amazon DynamoDB** (NoSQL 데이터베이스)
+- **API Gateway** (REST API 관리)
+- **JWT Authentication** (보안 인증)
 
-## 📁 프로젝트 구조
-
+### 아키텍처
 ```
-team27-aws-hackathon/
-├── app/                    # Android 앱
-│   ├── src/main/java/com/hackathon/alcolook/
-│   │   ├── ui/            # UI 컴포넌트
-│   │   │   ├── home/      # 홈 화면 (촬영)
-│   │   │   ├── calendar/  # 캘린더 화면
-│   │   │   ├── settings/  # 설정 화면
-│   │   │   └── auth/      # 로그인/회원가입
-│   │   ├── data/          # 데이터 레이어
-│   │   └── theme/         # Material 3 테마
-│   └── build.gradle.kts
-├── aws-backend/           # AWS Lambda 함수 (Python)
-│   ├── lambda/
-│   │   ├── user_login.py     # 로그인 API
-│   │   ├── user_register.py  # 회원가입 API
-│   │   └── update_profile.py # 프로필 업데이트
-│   └── cloudformation/       # AWS 인프라
-├── backend/               # 프로필 전용 API (Node.js)
-│   ├── lambda/
-│   │   └── profile-api.js    # 프로필 CRUD
-│   └── cloudformation/
-└── docs/                  # 문서
-    └── PRD.md            # 제품 요구사항 문서
+AlcoLook Android App
+├── UI Layer (Jetpack Compose)
+│   ├── 홈 화면 (얼굴 분석)
+│   ├── 캘린더 화면 (기록 관리)
+│   └── 설정 화면 (프로필 관리)
+├── Domain Layer
+│   ├── 음주 계산 로직
+│   └── 데이터 검증
+├── Data Layer
+│   ├── AWS API 통신
+│   ├── Room 로컬 DB
+│   └── JWT 인증 관리
+└── AWS Backend
+    ├── Lambda Functions
+    ├── DynamoDB Tables
+    └── API Gateway
 ```
 
-## 🚀 시작하기
+## 시작하기
 
-### 1. Android 앱 빌드
+### 1. 사전 요구 사항
+- Android Studio (최신 버전)
+- Android SDK (API 26 이상)
+- AWS CLI 설치 및 구성
+- 적절한 AWS 권한 (Lambda, DynamoDB, API Gateway)
+
+### 2. Android 앱 빌드
+
 ```bash
+# 프로젝트 클론
+git clone <repository-url>
+cd team27-aws-hackathon
+
+# 앱 빌드
 ./gradlew assembleDebug
+
+# 디바이스에 설치
+./gradlew installDebug
 ```
 
-### 2. AWS 백엔드 배포
+### 3. AWS 백엔드 배포
+
 ```bash
+# Python Lambda 함수 배포
 cd aws-backend
 ./deploy.sh
-```
 
-### 3. 프로필 API 배포
-```bash
-cd backend
+# Node.js 프로필 API 배포
+cd ../backend
 ./deploy.sh
 ```
 
-## 🎨 디자인 시스템
+### 4. 배포된 리소스
 
-### 색상 토큰
-- `warning-soft = #FFF4E5` (주의 상태)
-- `danger-soft = #FDEBEC` (폭음 상태)
+배포 후 다음 AWS 리소스들이 생성됩니다:
+- **Lambda Functions**: 사용자 인증, 프로필 관리, 비밀번호 재설정
+- **DynamoDB Tables**: 사용자 정보, 프로필 데이터
+- **API Gateway**: RESTful API 엔드포인트
+- **IAM Roles**: 적절한 권한 설정
 
-### 네비게이션
-- **홈**: 얼굴 분석 및 촬영
-- **캘린더**: 월별 기록 + 통계 (하위 탭)
-- **설정**: 프로필, 데이터 관리, 도움말
+## 데이터 모델
 
-## 📊 데이터베이스
-
-### DynamoDB 테이블
-1. **alcolook-users**: 사용자 정보
-2. **alcolook-user-profiles**: 사용자 프로필
-
-### 데이터 모델
+### 사용자 프로필 (DynamoDB)
 ```json
 {
-  "userId": "string",
+  "user_id": "string",
   "sex": "MALE|FEMALE|UNSET",
   "age": "number",
   "isSenior65": "boolean",
-  "weeklyGoalStdDrinks": "number"
+  "weeklyGoalStdDrinks": "number",
+  "created_at": "timestamp",
+  "updated_at": "timestamp"
 }
 ```
 
-## 🔐 인증
+### 음주 기록 (Room Database)
+```json
+{
+  "id": "number",
+  "date": "LocalDate",
+  "type": "DrinkType",
+  "abv": "float",
+  "volumeMl": "number",
+  "count": "number",
+  "note": "string",
+  "analysisProb": "float"
+}
+```
 
-- JWT 토큰 기반 인증
-- 7일 만료 정책
-- 로그인/회원가입/비밀번호 찾기 지원
+## 보안 및 개인정보 보호
 
-## ⚠️ 면책 고지
+### 🔐 데이터 보안
+- **JWT 토큰 인증**: 무제한 유효기간의 안전한 토큰 기반 인증
+- **HTTPS 통신**: 모든 API 통신은 SSL/TLS 암호화
+- **로컬 데이터 암호화**: 민감한 정보는 Android Keystore 활용
 
-이 앱은 의료 목적이 아니며, 운전 판단에 사용하지 마세요.
-모든 데이터는 개인 정보 보호를 위해 안전하게 관리됩니다.
+### 🛡️ 개인정보 보호
+- **최소 데이터 수집**: 서비스 제공에 필요한 최소한의 정보만 수집
+- **데이터 삭제 권한**: 사용자가 언제든 자신의 데이터 완전 삭제 가능
+- **익명화 처리**: 통계 분석 시 개인 식별 정보 제거
 
-## 👥 Team27
+## 면책 고지
 
-AWS 해커톤 참가팀
-- 음주 측정 및 관리 솔루션 개발
-- DynamoDB 기반 클라우드 아키텍처
+⚠️ **중요한 안전 고지사항**
+
+AlcoLook은 건강 관리 및 교육 목적으로 개발된 애플리케이션입니다:
+
+- **의료 목적 아님**: 본 앱은 의료 진단이나 치료를 위한 도구가 아닙니다
+- **운전 판단 금지**: 음주 측정 결과를 운전 가능 여부 판단에 사용하지 마세요
+- **참고용 정보**: 모든 측정 결과는 참고용이며 정확성을 보장하지 않습니다
+- **전문의 상담**: 음주 관련 건강 문제는 반드시 전문의와 상담하세요
+
+## 프로젝트 기대 효과
+
+### 1. 개인 건강 관리 향상
+- **객관적 음주 패턴 파악**: 데이터 기반의 정확한 음주 습관 분석
+- **건강한 음주 문화 조성**: 적정 음주량 인식 및 자기 관리 능력 향상
+- **예방적 건강 관리**: 음주로 인한 건강 문제 사전 예방
+
+### 2. 기술적 혁신
+- **AI 기술 활용**: 얼굴 분석을 통한 새로운 음주 측정 방식 제시
+- **클라우드 네이티브**: AWS 서버리스 아키텍처로 확장 가능한 서비스 구현
+- **모바일 퍼스트**: 언제 어디서나 접근 가능한 모바일 중심 설계
+
+### 3. 사회적 가치
+- **음주 문화 개선**: 건전한 음주 문화 확산에 기여
+- **공중 보건 향상**: 개인 차원의 음주 관리를 통한 사회적 건강 증진
+- **데이터 기반 정책**: 익명화된 통계 데이터로 공공 정책 수립 지원
+
+## 예상 사용 사례
+
+### 👥 개인 사용자
+- **직장인**: 회식 후 음주 상태 체크 및 건강 관리
+- **대학생**: 음주 습관 형성기 자기 관리 도구
+- **건강 관리자**: 정기적인 음주 패턴 모니터링
+
+### 🏢 기업 및 기관
+- **기업 복지**: 직원 건강 관리 프로그램의 일환
+- **보험사**: 건강 관리 서비스 제공 도구
+- **의료기관**: 환자 음주 습관 상담 보조 도구
+
+### 📚 연구 및 교육
+- **보건 연구**: 음주 패턴 분석을 위한 데이터 수집 도구
+- **건강 교육**: 음주의 영향을 시각적으로 보여주는 교육 자료
+- **정책 연구**: 음주 관련 공공 정책 수립을 위한 기초 데이터 제공
+
+## 라이선스 및 기여
+
+이 프로젝트는 AWS 해커톤 Team27의 작품으로, 건강한 음주 문화 조성과 개인 건강 관리 향상을 목표로 개발되었습니다.
+
+### 기여 방법
+- 버그 리포트 및 기능 제안
+- 코드 개선 및 최적화
+- 문서화 및 번역
+- 사용자 경험 개선 아이디어
+
+---
+
+**Team27 - AlcoLook Development Team**  
+*스마트한 음주 관리로 더 건강한 내일을 만들어갑니다*
