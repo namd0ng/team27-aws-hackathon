@@ -50,7 +50,10 @@ fun AddRecordDialog(
                 .fillMaxWidth()
                 .fillMaxHeight(0.9f)
                 .padding(16.dp),
-            shape = RoundedCornerShape(16.dp)
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surface
+            )
         ) {
             LazyColumn(
                 modifier = Modifier.padding(24.dp),
